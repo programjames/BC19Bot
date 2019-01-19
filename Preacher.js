@@ -106,6 +106,21 @@ Preacher.turn = function turn(_this) {
 		}
 		
 		return _this.attack(bestAttackDir[0], bestAttackDir[1]);
+	} else {
+		//get rid of goals we can see have no enemies
+		for(let i = temp_goals.length - 1; i>=0; i--) {
+			let loc = temp_goals[i];
+			if (distSquared(loc, [_this.me.x, _this.me.y])<=2) {
+				temp_goals.splice(i, 1);
+			}
+		}
+		//get rid of castle locations if we can see they are destroyed
+		for(let i = castle_locations.length - 1; i>=0; i--) {
+			let loc = temp_goals[i];
+			if (distSquared(loc, [_this.me.x, _this.me.y])<=2) {
+				castle_locations.splice(i, 1);
+			}
+		}
 	}
 	//Copy map to be able to edit it.
 	let map_copy = [];

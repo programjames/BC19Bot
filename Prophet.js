@@ -84,7 +84,23 @@ Prophet.turn = function turn(_this) {
 	//make Prophets chase enemies they see
 	if(enemies.length>0) {
 		temp_goals = enemies.map(enemy => [enemy.x, enemy.y]);
+	} else {
+		//get rid of goals we can see have no enemies
+		for(let i = temp_goals.length - 1; i>=0; i--) {
+			let loc = temp_goals[i];
+			if (distSquared(loc, [_this.me.x, _this.me.y])<=16) {
+				temp_goals.splice(i, 1);
+			}
+		}
+		//get rid of castle locations if we can see they are destroyed
+		for(let i = castle_locations.length - 1; i>=0; i--) {
+			let loc = temp_goals[i];
+			if (distSquared(loc, [_this.me.x, _this.me.y])<=16) {
+				castle_locations.splice(i, 1);
+			}
+		}
 	}
+	
 	//run away from close enemies
 	if(closeEnemies.length > 0) {
 		let closeEnemyLocations = closeEnemies.map(enemy => [enemy.x, enemy.y]);
@@ -95,16 +111,21 @@ Prophet.turn = function turn(_this) {
 		}
 	}
 	
-	//attack weakest enemy in range
+	//attack closest enemy in range
 	if(attackableEnemies.length>0) {
-		let weakest = attackableEnemies[0];
+		let closest = attackableEnemies[0];
+		let closestDist = -1;
 		for(let i = 0; i<attackableEnemies.length; i++) {
-			if(attackableEnemies[i].health < weakest.health) {
-				weakest = attackableEnemies[i];
+			let d2 = nav.distSquared([_this.me.x, _this.me.y], [attackableEnemies[i].x, attackableEnemies[i].y]);
+			if(closestDist === -1 || d2 < closestDist) {
+				closest = attackableEnemies[i];
+				closestDist = d2;
 			}
 		}
-		return _this.attack(weakest.x - _this.me.x, weakest.y - _this.me.y);
+		return _this.attack(closest.x - _this.me.x, closest.y - _this.me.y);
 	}
+	
+	
 	
 	//Copy map to be able to edit it.
 	let map_copy = [];
