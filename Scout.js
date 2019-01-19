@@ -24,7 +24,7 @@ Scout.turn = function turn(_this){
 		mapWidth = _this.map[0].length;
 		Scout.starting_pos = [_this.me.x, _this.me.y];
 		for (let a = 0; a < mapWidth; a++) {
-			var breaked = false;
+			let breaked = false;
 			for (let b = 0; b < mapHeight; b++) {
 				if (_this.map[b][a] !== _this.map[b][mapWidth - 1 - a]) {
 					horizontal_symmetry = false;
@@ -46,7 +46,7 @@ Scout.turn = function turn(_this){
 					castle_locations.push([visibleRobots[i].x, mapHeight - 1 - visibleRobots[i].y]);
 				}
 				// If the castle talk is -1, assume that there is no other castle.
-				var message = visibleRobots[i].signal;
+				let message = visibleRobots[i].signal;
 				if(message!==-1){
 					let message1 = message%256;
 					let message2 = message>>8;
@@ -78,7 +78,7 @@ Scout.turn = function turn(_this){
 	let enemy_castles = enemies.filter(robot => robot.unit === SPECS.CASTLE);
 	let castleSend = (Math.min(enemy_pilgrims.length,4)<<6)+(Math.min(enemy_crusaders.length,4)<<4)+(Math.min(enemy_prophets.length,4)<<2)+Math.min(enemy_preachers.length,4);
 	// End messaging to home.
-	// Kite in a circle around enemies.
+	// Move around any enemies (or run away if they are too close).
 	let enemy_locations = [];
 	enemy_crusaders.forEach(robot => enemy_locations.push([robot.x, robot.y]));
 	enemy_prophets.forEach(robot => enemy_locations.push([robot.x, robot.y]));
@@ -88,6 +88,7 @@ Scout.turn = function turn(_this){
 		let closest = nav.closestLocation([_this.me.x,_this.me.y], enemy_locations);
 		let dist = Math.sqrt(nav.distSquared([_this.me.x,_this.me.y], closest));
 		if(dist <= 8){
+			// Run away! This is a bugnav runaway:
 			let maxDir = [0,0];
 			let maxD = nav.distSqured([_this.me.x, _this.me.y], closest);
 			for(let i=0; i<Scout.moveDirs.length; i++){
