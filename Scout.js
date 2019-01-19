@@ -50,17 +50,24 @@ Scout.turn = function turn(_this){
 				if(message!==-1){
 					let message1 = message%256;
 					let message2 = message>>8;
-					let pos1 = nav.unpack(message1);
-					let pos2 = nav.unpack(message2);
 					
-					if(horizontal_symmetry){
-						if(x1!== 0 &&)
-						castle_locations.push([mapWidth - 1 - pos1[0],pos1[1]]);
-						castle_locations.push([mapWidth - 1 - pos2[0],pos2[1]]);
+					if(message1!==0){
+						let pos1 = nav.unpack(message1);
+						if(horizontal_symmetry){
+							castle_locations.push([mapWidth - 1 - pos1[0],pos1[1]]);
+						}
+						else {
+							castle_locations.push([pos1[0],mapHeight - 1 - pos1[1]]);
+						}
 					}
-					else {
-						castle_locations.push([pos1[0],mapHeight - 1 - pos1[1]]);
-						castle_locations.push([pos2[0],mapHeight - 1 - pos2[1]]);
+					if(message2!==0){
+						let pos2 = nav.unpack(message2);
+						if(horizontal_symmetry){
+							castle_locations.push([mapWidth - 1 - pos2[0],pos2[1]]);
+						}
+						else {
+							castle_locations.push([pos2[0],mapHeight - 1 - pos2[1]]);
+						}
 					}
 				}
 				
@@ -76,7 +83,8 @@ Scout.turn = function turn(_this){
 	let enemy_prophets = enemies.filter(robot => robot.unit === SPECS.PROPHET);
 	let enemy_preachers = enemies.filter(robot => robot.unit === SPECS.PREACHER);
 	let enemy_castles = enemies.filter(robot => robot.unit === SPECS.CASTLE);
-	let castleSend = (Math.min(enemy_pilgrims.length,4)<<6)+(Math.min(enemy_crusaders.length,4)<<4)+(Math.min(enemy_prophets.length,4)<<2)+Math.min(enemy_preachers.length,4);
+	let bitMessage = (Math.min(enemy_pilgrims.length,4)<<6)+(Math.min(enemy_crusaders.length,4)<<4)+(Math.min(enemy_prophets.length,4)<<2)+Math.min(enemy_preachers.length,4);
+	_this.castleTalk(bitMessage);
 	// End messaging to home.
 	// Move around any enemies (or run away if they are too close).
 	let enemy_locations = [];
