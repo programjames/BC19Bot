@@ -76,16 +76,18 @@ Scout.turn = function turn(_this){
 	}
 	// End of first turn stuff.
 	
-	// Now to tell the home base what enemies we see.
-	let enemies = visibleRobots.filter(robot => robot.team !== _this.me.team);
-	let enemy_pilgrims = enemies.filter(robot => robot.unit === SPECS.PILGRIM);
-	let enemy_crusaders = enemies.filter(robot => robot.unit === SPECS.CRUSADER);
-	let enemy_prophets = enemies.filter(robot => robot.unit === SPECS.PROPHET);
-	let enemy_preachers = enemies.filter(robot => robot.unit === SPECS.PREACHER);
-	let enemy_castles = enemies.filter(robot => robot.unit === SPECS.CASTLE);
-	let bitMessage = (Math.min(enemy_pilgrims.length,4)<<6)+(Math.min(enemy_crusaders.length,4)<<4)+(Math.min(enemy_prophets.length,4)<<2)+Math.min(enemy_preachers.length,4);
-	_this.castleTalk(bitMessage);
-	// End messaging to home.
+	if(_this.me.turn>2){
+		// Now to tell the home base what enemies we see.
+		let enemies = visibleRobots.filter(robot => robot.team !== _this.me.team);
+		let enemy_pilgrims = enemies.filter(robot => robot.unit === SPECS.PILGRIM);
+		let enemy_crusaders = enemies.filter(robot => robot.unit === SPECS.CRUSADER);
+		let enemy_prophets = enemies.filter(robot => robot.unit === SPECS.PROPHET);
+		let enemy_preachers = enemies.filter(robot => robot.unit === SPECS.PREACHER);
+		let enemy_castles = enemies.filter(robot => robot.unit === SPECS.CASTLE);
+		let bitMessage = (Math.min(enemy_pilgrims.length,4)<<6)+(Math.min(enemy_crusaders.length,4)<<4)+(Math.min(enemy_prophets.length,4)<<2)+Math.min(enemy_preachers.length,4);
+		_this.castleTalk(bitMessage);
+		// End messaging to home.
+	}
 	// Move around any enemies (or run away if they are too close).
 	let enemy_locations = [];
 	enemy_crusaders.forEach(robot => enemy_locations.push([robot.x, robot.y]));
@@ -145,7 +147,7 @@ Scout.turn = function turn(_this){
 		for(let i = 0; i<dirs.length;i++){
 			let x = _this.me.x + dirs[0];
 			let y = _this.me.y + dirs[1];
-			if(nav.isOpen(x,y,_this.map,visibleRobotMap)){
+			if(nav.isOpen([x, y],_this.map,visibleRobotMap)){
 				return _this.move(dirs[0],dirs[1]);
 			}
 		}
