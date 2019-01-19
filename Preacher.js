@@ -6,19 +6,77 @@ Preacher.attackDirs = [[-4, 0], [-3, -2], [-3, -1], [-3, 0], [-3, 1], [-3, 2], [
 Preacher.moveDirs = [[-2, 0], [-1, -1], [-1, 0], [-1, 1], [0, -2], [0, -1], [0, 1], [0, 2], [1, -1], [1, 0], [1, 1], [2, 0]];
 Preacher.splashDirs = [[-1, -1], [-1, 0], [-1, 1], [0, -1], [0, 0], [0, 1], [1, -1], [1, 0], [1, 1]];
 
-let end_goals = [];
+let castle_locations = [];
 let temp_goals = [];
-let counter = 5;
 let mapWidth;
 let mapHeight;
+let horizontal_symmetry = true;
 Preacher.turn = function turn(_this) {
+	let visibleRobotMap = _this.getVisibleRobotMap();
+	let visibleRobots = _this.getVisibleRobots();
+	
 	if(_this.me.turn === 1) {
 		mapWidth = _this.map[0].length;
 		mapHeight = _this.map.length;
+		
+		//determine map symmetry direction
+		for (let a = 0; a < mapWidth; a++) {
+			let breaked = false;
+			for (let b = 0; b < mapHeight; b++) {
+				if (_this.map[b][a] !== _this.map[b][mapWidth - 1 - a]) {
+					horizontal_symmetry = false;
+					breaked = true;
+					break;
+				}
+			}
+			if(breaked){
+				break;
+			}
+		}
+		
+		//determine enemy castle locations
+		for(let i = 0; i<visibleRobots.length;i++){
+			if(visibleRobots[i].unit === SPECS.CASTLE && visibleRobots[i].team === _this.me.team){
+				// Push the castle location.
+				if(horizontal_symmetry){
+					castle_locations.push([mapWidth - 1 - visibleRobots[i].x, visibleRobots[i].y]);
+				}
+				else{
+					castle_locations.push([visibleRobots[i].x, mapHeight - 1 - visibleRobots[i].y]);
+				}
+				// If the signal is -1, assume that there is no other castle.
+				let message = visibleRobots[i].signal;
+				if(message!==-1){
+					let message1 = message%256;
+					let message2 = message>>8;
+					
+					if(message1!==0){
+						let pos1 = nav.unpack(message1);
+						if(horizontal_symmetry){
+							castle_locations.push([mapWidth - 1 - pos1[0],pos1[1]]);
+						}
+						else {
+							castle_locations.push([pos1[0],mapHeight - 1 - pos1[1]]);
+						}
+					}
+					if(message2!==0){
+						let pos2 = nav.unpack(message2);
+						if(horizontal_symmetry){
+							castle_locations.push([mapWidth - 1 - pos2[0],pos2[1]]);
+						}
+						else {
+							castle_locations.push([pos2[0],mapHeight - 1 - pos2[1]]);
+						}
+					}
+				}
+			}
+		}
 	}
-	let visibleRobotMap = _this.getVisibleRobotMap();
-	let friends = visibleRobots.reduce(robot => robot.team === _this.me.team);
-	let enemies = visibleRobots.reduce(robot => robot.team !== _this.me.team);
+	
+	
+	let friends = visibleRobots.filter(robot => robot.team === _this.me.team);
+	let enemies = visibleRobots.filter(robot => robot.team !== _this.me.team);
+	
 	if(enemies.length>0) {
 		let bestAttackDir = -1;
 		let enemiesHarmed = -10000000;
@@ -64,16 +122,11 @@ Preacher.turn = function turn(_this) {
 			let newLocation = bfsMap[_this.me.y][_this.me.x][Math.floor(Math.random()*bfsMap[_this.me.y][_this.me.x].length)];
 			return _this.move(newLocation - _this.me.x, newLocation - _this.me.y);
 		}
-	} else if(end_goals.length>0) {
-		let bfsMap = nav.breadthFirstSearch(end_goals, map_copy, Preacher.moveDirs, _this);
+	} else if(castle_locations.length>0) {
+		let bfsMap = nav.breadthFirstSearch(castle_locations, map_copy, Preacher.moveDirs, _this);
 		if(bfsMap[_this.me.y][_this.me.x].length > 0) {
 			let newLocation = bfsMap[_this.me.y][_this.me.x][Math.floor(Math.random()*bfsMap[_this.me.y][_this.me.x].length)];
 			return _this.move(newLocation - _this.me.x, newLocation - _this.me.y);
-		}
-	} else {
-		counter--;
-		if(counter<0) {
-			temp_goals.push(nav.closestPassableLocation([Math.floor(Math.random()*mapWidth), Math.floor(Math.random()*mapHeight)], passable_map, _this));
 		}
 	}
 	
