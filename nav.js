@@ -7,7 +7,7 @@ function distSquared(loc1, loc2) {
     return Math.pow(loc1[0] - loc2[0], 2) + Math.pow(loc1[1] - loc2[1], 2);
 }
 
-function breadthFirstSearch(goals, passable_map, directions, _this) {
+function breadthFirstSearch(goals, passable_map, directions) {
     let going_to_check = new Queue(goals);
     let already_checked_map = [];
     let best_directions_list = [];
@@ -90,7 +90,7 @@ class Queue {
     }
 }
 
-function closestPassableLocation(starting_location, passable_map, _this) {
+function closestPassableLocation(starting_location, passable_map) {
 	let bestLocation = [-1, -1];
 	let distToBestLocation = -1;
 	for(let y = 0; i<passable_map.length; i++) {
@@ -106,24 +106,54 @@ function closestPassableLocation(starting_location, passable_map, _this) {
 	return bestLocation;
 }
 
-function isOpen(x,y, passable_map, robot_map){
-	if(passable_map[y][x] && robot_map[y][x]<=0){
+function isOpen(your_location, passable_map, robot_map){
+	if(passable_map[your_location[1]][your_location[0]] && robot_map[your_location[1]][your_location[0]]<=0){
 		return true;
 	}
 	return false;
 }
 
-function closestLocation(myLoc, location_list){
+function closestLocation(your_location, location_list){
 	let minD = -1;
 	let minLoc;
 	for(let i=0; i<location_list.length; i++){
-		let d = distSquared(myLoc,location_list[i]);
+		let d = distSquared(your_location,location_list[i]);
 		if(minD === -1 || d<minD){
 			minD = d;
 			minLoc = location_list[i];
 		}
 	}
 	return minLoc;
+}
+
+function leastDistance(your_location, location_list) {
+	let leastDist = -1;
+	for(let i = 0; i<location_list.length; i++) {
+		let d2 = distSquared(location_list[i], your_location);
+		if(leastDist === -1 || d2 < leastDist) {
+			leastDist = d2;
+		}
+	}
+	return leastDist;
+}
+
+function runAwayDirs(your_location, location_list, moveDirs, passable_map, robot_map) {
+	let leastDistAway = leastDistance(your_location, location_list);
+	let bestMoves = [];
+	for(let i = 0; i<moveDirs.length; i++) {
+		let newLoc = [your_location[0] + moveDirs[i][0], your_location[1] + moveDirs[i][1]];
+		if(!isOpen(newLoc, passable_map, robot_map)) {
+			continue;
+		}
+		let distAway = leastDistance(newLoc, location_list);
+		if (distAway<leastDistAway) {
+			leastDistAway = distAway;
+			bestMoves = [moveDirs[i]];
+		} else if (distAway === leastDistAway) {
+			bestMoves.push(moveDirs[i]);
+		}
+	}
+	return bestMoves;
 }
 
 function unpack(message, passable_map){
@@ -153,6 +183,9 @@ function unpack(message, passable_map){
 	return [x,y];
 }
 
+function pack(loc) {
+	return (Math.floor(loc[0]/4)<<4) + Math.floor(loc[1]/4);
+}
 
 var nav = {};
 nav.distSquared = distSquared;
@@ -161,4 +194,6 @@ nav.closestPassableLocation = closestPassableLocation;
 nav.unpack = unpack;
 nav.isOpen = isOpen;
 nav.closestLocation = closestLocation;
+nav.leastDistance = leastDistance;
+nav.runAwayDirs = runAwayDirs;
 export default nav;
