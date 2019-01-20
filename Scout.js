@@ -2,7 +2,7 @@ import {
 	SPECS
 } from 'battlecode';
 
-import nav from './nav/';
+import nav from './nav.js';
 
 var Scout = {};
 
@@ -39,8 +39,7 @@ Scout.turn = function turn(_this){
 			}
 		}
 		for(let i = 0; i<visibleRobots.length;i++){
-			if(visibleRobots[i].unit === SPECS.CASTLE && visibleRobots[i].team === _this.me.team \
-			&& nav.distSqured([_this.me.x, _this.me.y], [visibleRobots[i].x, visibleRobots[i].y])<=2){
+			if(visibleRobots[i].unit === SPECS.CASTLE && visibleRobots[i].team === _this.me.team && nav.distSquared([_this.me.x, _this.me.y], [visibleRobots[i].x, visibleRobots[i].y])<=2){
 				// Push the castle location.
 				if(horizontal_symmetry){
 					castle_locations.push([mapWidth - 1 - visibleRobots[i].x, visibleRobots[i].y]);
@@ -79,7 +78,6 @@ Scout.turn = function turn(_this){
 	}
 	// End of first turn stuff.
 	
-	if(_this.me.turn>2){
 		// Now to tell the home base what enemies we see.
 		let enemies = visibleRobots.filter(robot => robot.team !== _this.me.team);
 		let enemy_pilgrims = enemies.filter(robot => robot.unit === SPECS.PILGRIM);
@@ -87,6 +85,7 @@ Scout.turn = function turn(_this){
 		let enemy_prophets = enemies.filter(robot => robot.unit === SPECS.PROPHET);
 		let enemy_preachers = enemies.filter(robot => robot.unit === SPECS.PREACHER);
 		let enemy_castles = enemies.filter(robot => robot.unit === SPECS.CASTLE);
+	if(_this.me.turn>2){
 		let bitMessage = (Math.min(enemy_pilgrims.length,4)<<6)+(Math.min(enemy_crusaders.length,4)<<4)+(Math.min(enemy_prophets.length,4)<<2)+Math.min(enemy_preachers.length,4);
 		_this.castleTalk(bitMessage);
 		// End messaging to home.
