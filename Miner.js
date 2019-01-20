@@ -9,6 +9,9 @@ var Miner = {};
 Miner.moveDirs = [[1,0],[-1,0],[0,1],[0,-1],[1,1],[1,-1],[-1,1],[-1,-1],[2,0],[-2,0],[0,2],[0,-2]];
 Miner.giveDirs = [[-1, -1], [-1, 0], [-1, 1], [0, -1], [0, 1], [1, -1], [1, 0], [1, 1]];
 Miner.aroundDirs = [[-5, 0], [-4, -1], [-4, 0], [-4, 1], [-3, -2], [-3, -1], [-3, 0], [-3, 1], [-3, 2], [-2, -3], [-2, -2], [-2, -1], [-2, 0], [-2, 1], [-2, 2], [-2, 3], [-1, -4], [-1, -3], [-1, -2], [-1, -1], [-1, 0], [-1, 1], [-1, 2], [-1, 3], [-1, 4], [0, -5], [0, -4], [0, -3], [0, -2], [0, -1], [0, 0], [0, 1], [0, 2], [0, 3], [0, 4], [0, 5], [1, -4], [1, -3], [1, -2], [1, -1], [1, 0], [1, 1], [1, 2], [1, 3], [1, 4], [2, -3], [2, -2], [2, -1], [2, 0], [2, 1], [2, 2], [2, 3], [3, -2], [3, -1], [3, 0], [3, 1], [3, 2], [4, -1], [4, 0], [4, 1], [5, 0]];
+
+
+
 Miner.myResources = 1;
 Miner.areYouUsingResources = 2;
 
@@ -28,7 +31,7 @@ Miner.turn = function turn(_this, goForKarb) {
 	let visibleRobotMap = _this.getVisibleRobotMap();
 	let visibleRobots = _this.getVisibleRobots();
 	if (_this.me.turn === 1) {
-		_this.log("first turn stuff");
+		//_this.log("first turn stuff");
 		// Find initial values, and places to go to.
 		mapWidth = _this.karbonite_map[0].length;
 		mapHeight = _this.karbonite_map.length;
@@ -130,7 +133,7 @@ Miner.turn = function turn(_this, goForKarb) {
 			map_copy.push(_this.map[i].slice());
 		}
 		visibleRobots.forEach(function(friend) {
-			if (friend.unit > 2) {
+			if (friend.unit >= 2) {
 				map_copy[friend.y][friend.x] = false;
 			}
 		});
@@ -142,29 +145,13 @@ Miner.turn = function turn(_this, goForKarb) {
 			for (let i = resource_goals.length - 1; i >= 0; i--) {
 				if (visibleRobotMap[resource_goals[i][1]][resource_goals[i][0]] > 0 && (resource_goals[i][1] !== _this.me.y || resource_goals[i][0] !== _this.me.x)) {
 					let r = _this.getRobot(visibleRobotMap[resource_goals[i][1]][resource_goals[i][0]]);
-					if (r.unit == SPECS.PILGRIM && r.signal === Miner.myResources) {
-						askedIDs.push(r.id);
+					if (r.unit == SPECS.PILGRIM && r.team === _this.me.team){
 						resource_goals.splice(i, 1);
 						continue;
-					}
-					let alreadyAsked = false;
-					for (let j = 0; j < askedIDs.length; j++) {
-						if (askedIDs[j] === r.id) {
-							alreadyAsked = true;
-							break;
-						}
-					}
-					if (!alreadyAsked && r.unit == SPECS.PILGRIM) {
-						let d = Math.pow(Math.ceil(Math.sqrt(nav.distSquared([r.x, r.y], [_this.me.x, _this.me.y]))), 2);
-						if (d <= 16) {
-							_this.signal(Miner.areYouUsingResources, d);
-						}
 					}
 				}
 			}
 			// Let's get our best path now.
-			//resource_goals.forEach(g => map_copy[g[1]][g[0]] = true);
-			//map_copy[_this.me.y][_this.me.x] = true;
 			path = nav.breadthFirstSearch(resource_goals, map_copy, Miner.moveDirs);
 		} else { // We want to return our resources to a church/chapel.
 			// Let's first see if it is possible to give our stuff, then try to move if it isn't possible.
@@ -183,9 +170,9 @@ Miner.turn = function turn(_this, goForKarb) {
 			}
 
 			// Well that didn't work, so let's just move towards a church/chapel.
-			//_this.log(map_copy[0]);
-			//_this.log(depot_goals);
-			//_this.log(Miner.moveDirs);
+			////_this.log(map_copy[0]);
+			////_this.log(depot_goals);
+			////_this.log(Miner.moveDirs);
 			path = nav.breadthFirstSearch(depot_goals, map_copy, Miner.moveDirs);
 		}
 		let dirs = path[_this.me.y][_this.me.x];

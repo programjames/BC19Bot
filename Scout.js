@@ -22,7 +22,7 @@ Scout.turn = function turn(_this){
 	
 	// First turn stuff.
 	if(_this.me.turn === 1){
-		_this.log("first turn stuff Scout");
+		//_this.log("first turn stuff Scout");
 		mapHeight = _this.map.length;
 		mapWidth = _this.map[0].length;
 		Scout.starting_pos = [_this.me.x, _this.me.y];
@@ -121,7 +121,7 @@ Scout.turn = function turn(_this){
 				kiting_dir*=-1;
 				x = _this.me.x +kiting_dir*dx;
 				y = _this.me.y + kiting_dir*dy;
-				if(_this.map[y][x] && visibleRobotMap[y][x]<=0){
+				if(nav.isOpen([x,y],_this.map, visibleRobotMap)){
 					return _this.move(kiting_dir*dx, kiting_dir*dy);
 				}
 			}
@@ -133,7 +133,7 @@ Scout.turn = function turn(_this){
 		for(let i=0; i<mapHeight;i++){
 			map_copy.push(_this.map[i].slice());
 		}
-		_this.log(visibleRobots[0]);
+		//_this.log(visibleRobots[0]);
 		visibleRobots.forEach(robot => map_copy[robot.y][robot.x] = false);
 		castle_locations.forEach(loc => map_copy[loc[1]][loc[0]] = true);
 		map_copy[_this.me.y][_this.me.x] = true;
@@ -142,7 +142,7 @@ Scout.turn = function turn(_this){
 		for(let i = 0; i<dirs.length;i++){
 			let x = dirs[i][0];
 			let y = dirs[i][1];
-			_this.log("x, y:  " + x + ", " + y);
+			//_this.log("x, y:  " + x + ", " + y);
 			if(nav.isOpen([x, y],_this.map,visibleRobotMap)){
 				return _this.move(x - _this.me.x, y - _this.me.y);
 			}

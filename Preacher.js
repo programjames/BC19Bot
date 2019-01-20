@@ -77,9 +77,9 @@ Preacher.turn = function turn(_this) {
 	let friends = visibleRobots.filter(robot => robot.team === _this.me.team);
 	let enemies = visibleRobots.filter(robot => robot.team !== _this.me.team);
 	
-	_this.log("got here 80");
+	////_this.log("got here 80");
 	if(enemies.length>0) {
-		_this.log("got here 82");
+		//_this.log("got here 82");
 		let bestAttackDir = -1;
 		let enemiesHarmed = -10000000;
 		for(let i = 0; i<Preacher.attackDirs.length; i++) {
@@ -92,8 +92,9 @@ Preacher.turn = function turn(_this) {
 			if (!_this.map[new_y][new_x]) {
 				continue;
 			}
+			//_this.log("got here 96");
 			let tempEnemiesHarmed = 0;
-			for(let j = 0; j<Preacher.splashDirs; j++) {
+			for(let j = 0; j<Preacher.splashDirs.length; j++) {
 				let id = visibleRobotMap[new_y + Preacher.splashDirs[j][1]][new_x + Preacher.splashDirs[j][0]];
 				if(id>0) {
 					let robot = _this.getRobot(id);
@@ -108,6 +109,8 @@ Preacher.turn = function turn(_this) {
 				bestAttackDir = dir;
 				enemiesHarmed = tempEnemiesHarmed;
 			}
+			////_this.log(bestAttackDir);
+			////_this.log(dir);
 		}
 		
 		return _this.attack(bestAttackDir[0], bestAttackDir[1]);
@@ -135,17 +138,17 @@ Preacher.turn = function turn(_this) {
 	//make friends impassable
 	friends.forEach(friend => map_copy[friend.y][friend.x] = false);
 	map_copy[_this.me.y][_this.me.x] = true;
-	_this.log("got here 123");
+	////_this.log("got here 123");
 	
 	if(temp_goals.length>0) {
-		_this.log("got here 126");
+		////_this.log("got here 126");
 		let bfsMap = nav.breadthFirstSearch(temp_goals, map_copy, Preacher.moveDirs);
 		if(bfsMap[_this.me.y][_this.me.x].length > 0) {
 			let newLocation = bfsMap[_this.me.y][_this.me.x][Math.floor(Math.random()*bfsMap[_this.me.y][_this.me.x].length)];
 			return _this.move(newLocation[0] - _this.me.x, newLocation[1] - _this.me.y);
 		}
 	} else if(castle_locations.length>0) {
-		_this.log("got here 133");
+		////_this.log("got here 133");
 		let bfsMap = nav.breadthFirstSearch(castle_locations, map_copy, Preacher.moveDirs);
 		if(bfsMap[_this.me.y][_this.me.x].length > 0) {
 			let newLocation = bfsMap[_this.me.y][_this.me.x][Math.floor(Math.random()*bfsMap[_this.me.y][_this.me.x].length)];

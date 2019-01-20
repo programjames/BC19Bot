@@ -34,8 +34,8 @@ var preachers_built = 0;
 var crusaders_built = 0;
 
 // constant for signalling.
-var KARB_MINER = 1;
-var FUEL_MINER = 2;
+var KARB_MINER = 3;
+var FUEL_MINER = 4;
 
 Castle.turn = function turn(_this){
 	let visibleRobotMap = _this.getVisibleRobotMap();
@@ -141,6 +141,7 @@ Castle.turn = function turn(_this){
 			}
 		}
 	}*/
+	//_this.log("Fuels/ Karbs built:  "+fuels_built+", "+karbs_built);
 	if(_this.me.turn === 3 && _this.karbonite>=10 && _this.fuel >=50){
 		// build scout.
 		let bitSend = 0;
@@ -164,10 +165,10 @@ Castle.turn = function turn(_this){
 		}
 	}
 	else if(_this.fuel>=50 && _this.karbonite>=10){
-		_this.log("Best build:  "+bestBuild);
-		if(_this.karbnite>= SPECS.UNITS[bestBuild].CONSTRUCTION_KARBONITE && _this.karbnite>= SPECS.UNITS[bestBuild].CONSTRUCTION_FUEL &&( (karbs_built>=max_karbs && fuels_built>=max_fuels) || ( (enemies.length>0 || (numCrusaders*20+numProphets*25+numPreachers*30) >=120)))){
+		//_this.log("Best build:  "+bestBuild);
+		if(_this.karbonite>= SPECS.UNITS[bestBuild].CONSTRUCTION_KARBONITE && _this.fuel>= SPECS.UNITS[bestBuild].CONSTRUCTION_FUEL &&( (karbs_built>=max_karbs && fuels_built>=max_fuels) || ( (enemies.length>0 || (numCrusaders*20+numProphets*25+numPreachers*30) >=120)))){
 			// build our bestBuild attack unit.
-			_this.log("I'm going to build a good one.");
+			//_this.log("I'm going to build a good one.");
 			let bitSend = 0;
 			for(let i = 0; i<castle_locations.length; i++){
 				bitSend = bitSend<<4;
@@ -188,7 +189,7 @@ Castle.turn = function turn(_this){
 				}
 			}
 		}
-		else if ((_this.fuel<_this.karbonite*5 || (karbs_built>=max_karbs && fuels_built<max_fuels)) && _this.karbonite>=60){
+		else if ((_this.fuel<_this.karbonite*5 || karbs_built>=max_karbs) && fuels_built<max_fuels && _this.karbonite>=60){
 			//build a karb guy.
 			for(let i = 0; i<Castle.buildDirs.length; i++){
 				let x = Castle.buildDirs[i][0]+_this.me.x;
@@ -216,7 +217,7 @@ Castle.turn = function turn(_this){
 	
 	// Attack any enemies.
 	if(enemies.length > 0){
-		_this.log("Oh no, I see enemies!");
+		//_this.log("Oh no, I see enemies!");
 		let enemy_locs = [];
 		enemies.forEach(robot => enemy_locs.push([robot.x, robot.y]));
 		let closest = nav.closestLocation([_this.me.x, _this.me.y], enemy_locs);
