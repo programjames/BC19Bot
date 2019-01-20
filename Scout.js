@@ -13,6 +13,8 @@ var mapWidth;
 var horizontal_symmetry = true;
 //This is enemy castle locations.
 var castle_locations = [];
+// kiting in a circle
+var kiting_dir = 1;
 
 Scout.turn = function turn(_this){
 	let visibleRobotMap = _this.getVisibleRobotMap();
@@ -37,7 +39,8 @@ Scout.turn = function turn(_this){
 			}
 		}
 		for(let i = 0; i<visibleRobots.length;i++){
-			if(visibleRobots[i].unit === SPECS.CASTLE && visibleRobots[i].team === _this.me.team){
+			if(visibleRobots[i].unit === SPECS.CASTLE && visibleRobots[i].team === _this.me.team \
+			&& nav.distSqured([_this.me.x, _this.me.y], [visibleRobots[i].x, visibleRobots[i].y])<=2){
 				// Push the castle location.
 				if(horizontal_symmetry){
 					castle_locations.push([mapWidth - 1 - visibleRobots[i].x, visibleRobots[i].y]);
@@ -99,37 +102,28 @@ Scout.turn = function turn(_this){
 		let dist = Math.sqrt(nav.distSquared([_this.me.x,_this.me.y], closest));
 		if(dist <= 8){
 			// Run away! This is a bugnav runaway:
-			let maxDir = [0,0];
-			let maxD = nav.distSqured([_this.me.x, _this.me.y], closest);
-			for(let i=0; i<Scout.moveDirs.length; i++){
-				let x = Scout.moveDirs[i][0]+_this.me.x;
-				let y = Scout.moveDirs[i][1]+_this.me.y;
-				if(x>=0 && y>=0 && x<mapWidth && y<mapHeight && _this.map[y][x] && visibleRobotMap[y][x]<=0){
-					let d = nav.distSquared([x, y], closest);
-					if(d>maxD){
-						maxD = d;
-						maxDir = Scout.moveDirs[i];
-					}
-				}
+			let moves = nav.runAwayDirs([_this.me.x, _this.me.y], enemy_locations, Scout.moveDirs, _this.map, visibleRobotMap);
+			if(moves.length > 0){
+				let r = Math.floor(Math.random()*moves);
+				return _this.move(moves[r][0], moves[r][1]);
 			}
-			if(maxDir[0]!== 0 || maxDir[1]!== 0){
-				return _this.move(maxDir[0], maxDir[1]);
-			}
-			
 		}
 		else{
 			// Circle around enemy;
 			let dx = Math.round(1.49*(closest[1] - _this.me.y)/dist);
 			let dy = Math.round(1.49*(_this.me.x - closest[0])/dist);
-			let x = _this.me.x + dx;
-			let y = _this.me.y + dy;
+			let x = _this.me.x + kiting_dir*dx;
+			let y = _this.me.y + kiting_dir*dy;
 			if(_this.map[y][x] && visibleRobotMap[y][x]<=0){
-				return _this.move(dx, dy);
+				return _this.move(kiting_dir*dx, kiting_dir*dy);
 			}
-			let x = _this.me.x - dx;
-			let y = _this.me.y - dy;
-			if(_this.map[y][x] && visibleRobotMap[y][x]<=0){
-				return _this.move(-dx, -dy);
+			else{
+				kiting_dir*=-1;
+				x = _this.me.x +kiting_dir*dx;
+				y = _this.me.y + kiting_dir*dy;
+				if(_this.map[y][x] && visibleRobotMap[y][x]<=0){
+					return _this.move(kiting_dir*dx, kiting_dir*dy);
+				}
 			}
 		}
 	} else {
