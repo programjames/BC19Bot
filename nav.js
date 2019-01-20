@@ -113,6 +113,14 @@ function isOpen(your_location, passable_map, robot_map){
 	return false;
 }
 
+function isOnMap(loc, width, height) {
+	return (loc[0]>=0 && loc[1]>=0 && loc[0]<width && loc[1]<height);
+}
+
+function isOnPassableMap(loc, passable_map) {
+	return (loc[0]>=0 && loc[1]>=0 && loc[0]<passable_map[0].length && loc[1]<passable_map.length && passable_map[loc[1]][loc[0]]); 
+}
+
 function closestLocation(your_location, location_list){
 	let minD = -1;
 	let minLoc;
@@ -164,7 +172,9 @@ function unpack(message, passable_map){
 		let minDir = [0,0];
 		for(let a = 0; a<4; a++){
 			for(let b = 0; b<4; b++){
-				if(passable_map[x+a][y+b]){
+				let c = x+a;
+				let d = y+b
+				if(c>=0 && d>=0 && c<passable_map[0].length && d<passable_map.length && passable_map[d][c]){
 					let diff = Math.abs(a-2)+Math.abs(b-2);
 					if(minD===-1){
 						minD = diff;
@@ -192,7 +202,10 @@ nav.distSquared = distSquared;
 nav.breadthFirstSearch = breadthFirstSearch;
 nav.closestPassableLocation = closestPassableLocation;
 nav.unpack = unpack;
+nav.pack = pack;
 nav.isOpen = isOpen;
+nav.isOnMap = isOnMap;
+nav.isOnPassableMap = isOnPassableMap;
 nav.closestLocation = closestLocation;
 nav.leastDistance = leastDistance;
 nav.runAwayDirs = runAwayDirs;
