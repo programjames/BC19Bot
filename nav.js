@@ -107,7 +107,8 @@ function closestPassableLocation(starting_location, passable_map) {
 }
 
 function isOpen(your_location, passable_map, robot_map){
-	if(passable_map[your_location[1]][your_location[0]] && robot_map[your_location[1]][your_location[0]]<=0){
+	if(your_location[0]>=0 && your_location[1]>=0 && your_location[0]<passable_map.length && your_location[1]<passable_map[0].length \
+	&& passable_map[your_location[1]][your_location[0]] && robot_map[your_location[1]][your_location[0]]<=0){
 		return true;
 	}
 	return false;
