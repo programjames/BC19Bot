@@ -146,6 +146,9 @@ Castle.turn = function turn(_this){
 			bitSend = bitSend<<4;
 			bitSend+=castle_locations[i][1];
 		}
+		if(castle_locations.length === 1){
+			bitSend = bitSend<<8;
+		}
 		for(let i = 0; i<Castle.buildDirs.length; i++){
 			let x = Castle.buildDirs[i][0]+_this.me.x;
 			let y = Castle.buildDirs[i][1]+_this.me.y;
@@ -157,7 +160,52 @@ Castle.turn = function turn(_this){
 		}
 	}
 	else{
-		// THIS IS WHERE YOU BUILD THE CORRECT UNITS JOSEPH.
+		if(numCrusaders*20+numProphets*25+numPreachers*30 >=120){
+			// build our bestBuild attack unit.
+			let bitSend = 0;
+			for(let i = 0; i<castle_locations.length; i++){
+				bitSend = bitSend<<8;
+				bitSend+=castle_locations[i][0];
+				bitSend = bitSend<<4;
+				bitSend+=castle_locations[i][1];
+			}
+			if(castle_locations.length === 1){
+				bitSend = bitSend<<8;
+			}
+			for(let i = 0; i<Castle.buildDirs.length; i++){
+				let x = Castle.buildDirs[i][0]+_this.me.x;
+				let y = Castle.buildDirs[i][1]+_this.me.y;
+				if(nav.isOpen([x,y], _this.map, visibleRobotMap)){
+					scouts_built+=1;
+					_this.signal(bitSend, 2);
+					return _this.build(bestBuild, buildDirs[i][0], buildDirs[i][1]);
+				}
+			}
+		}
+		else if (fuels_built<karbs_built && _this.karbonite>=60){
+			//build a karb guy.
+			for(let i = 0; i<Castle.buildDirs.length; i++){
+				let x = Castle.buildDirs[i][0]+_this.me.x;
+				let y = Castle.buildDirs[i][1]+_this.me.y;
+				if(nav.isOpen([x,y], _this.map, visibleRobotMap)){
+					karbs_built+=1;
+					_this.signal(KARB_MINER, 2);
+					return _this.build(SPECS.PILGRIM, buildDirs[i][0], buildDirs[i][1]);
+				}
+			}
+		}
+		else if (_this.karbonite>=60){
+			// build a fuel miner.
+			for(let i = 0; i<Castle.buildDirs.length; i++){
+				let x = Castle.buildDirs[i][0]+_this.me.x;
+				let y = Castle.buildDirs[i][1]+_this.me.y;
+				if(nav.isOpen([x,y], _this.map, visibleRobotMap)){
+					karbs_built+=1;
+					_this.signal(FUEL_MINER, 2);
+					return _this.build(SPECS.PILGRIM, buildDirs[i][0], buildDirs[i][1]);
+				}
+			}
+		}
 	}
 }
 
