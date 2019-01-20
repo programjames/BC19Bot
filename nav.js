@@ -154,7 +154,7 @@ function runAwayDirs(your_location, location_list, moveDirs, passable_map, robot
 			continue;
 		}
 		let distAway = leastDistance(newLoc, location_list);
-		if (distAway<leastDistAway) {
+		if (distAway>leastDistAway) {
 			leastDistAway = distAway;
 			bestMoves = [moveDirs[i]];
 		} else if (distAway === leastDistAway) {
