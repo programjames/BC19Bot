@@ -51,7 +51,7 @@ Preacher.turn = function turn(_this) {
 					let message2 = message>>8;
 					
 					if(message1!==0){
-						let pos1 = nav.unpack(message1);
+						let pos1 = nav.unpack(message1, _this.map);
 						if(horizontal_symmetry){
 							castle_locations.push([mapWidth - 1 - pos1[0],pos1[1]]);
 						}
@@ -60,7 +60,7 @@ Preacher.turn = function turn(_this) {
 						}
 					}
 					if(message2!==0){
-						let pos2 = nav.unpack(message2);
+						let pos2 = nav.unpack(message2, _this.map);
 						if(horizontal_symmetry){
 							castle_locations.push([mapWidth - 1 - pos2[0],pos2[1]]);
 						}
@@ -77,13 +77,18 @@ Preacher.turn = function turn(_this) {
 	let friends = visibleRobots.filter(robot => robot.team === _this.me.team);
 	let enemies = visibleRobots.filter(robot => robot.team !== _this.me.team);
 	
+	_this.log("got here 80");
 	if(enemies.length>0) {
+		_this.log("got here 82");
 		let bestAttackDir = -1;
 		let enemiesHarmed = -10000000;
 		for(let i = 0; i<Preacher.attackDirs.length; i++) {
 			let dir = Preacher.attackDirs[i];
 			let new_x = dir[0] + _this.me.x;
 			let new_y = dir[1] + _this.me.y;
+			if(!nav.isOnMap([new_x,new_y], mapWidth, mapHeight)) {
+				continue;
+			}
 			if (!_this.map[new_y][new_x]) {
 				continue;
 			}
@@ -110,14 +115,14 @@ Preacher.turn = function turn(_this) {
 		//get rid of goals we can see have no enemies
 		for(let i = temp_goals.length - 1; i>=0; i--) {
 			let loc = temp_goals[i];
-			if (distSquared(loc, [_this.me.x, _this.me.y])<=2) {
+			if (nav.distSquared(loc, [_this.me.x, _this.me.y])<=2) {
 				temp_goals.splice(i, 1);
 			}
 		}
 		//get rid of castle locations if we can see they are destroyed
 		for(let i = castle_locations.length - 1; i>=0; i--) {
-			let loc = temp_goals[i];
-			if (distSquared(loc, [_this.me.x, _this.me.y])<=2) {
+			let loc = castle_locations[i];
+			if (nav.distSquared(loc, [_this.me.x, _this.me.y])<=2) {
 				castle_locations.splice(i, 1);
 			}
 		}
@@ -129,19 +134,22 @@ Preacher.turn = function turn(_this) {
 	}
 	//make friends impassable
 	friends.forEach(friend => map_copy[friend.y][friend.x] = false);
-	
+	map_copy[_this.me.y][_this.me.x] = true;
+	_this.log("got here 123");
 	
 	if(temp_goals.length>0) {
-		let bfsMap = nav.breadthFirstSearch(temp_goals, map_copy, Preacher.moveDirs, _this);
+		_this.log("got here 126");
+		let bfsMap = nav.breadthFirstSearch(temp_goals, map_copy, Preacher.moveDirs);
 		if(bfsMap[_this.me.y][_this.me.x].length > 0) {
 			let newLocation = bfsMap[_this.me.y][_this.me.x][Math.floor(Math.random()*bfsMap[_this.me.y][_this.me.x].length)];
-			return _this.move(newLocation - _this.me.x, newLocation - _this.me.y);
+			return _this.move(newLocation[0] - _this.me.x, newLocation[1] - _this.me.y);
 		}
 	} else if(castle_locations.length>0) {
-		let bfsMap = nav.breadthFirstSearch(castle_locations, map_copy, Preacher.moveDirs, _this);
+		_this.log("got here 133");
+		let bfsMap = nav.breadthFirstSearch(castle_locations, map_copy, Preacher.moveDirs);
 		if(bfsMap[_this.me.y][_this.me.x].length > 0) {
 			let newLocation = bfsMap[_this.me.y][_this.me.x][Math.floor(Math.random()*bfsMap[_this.me.y][_this.me.x].length)];
-			return _this.move(newLocation - _this.me.x, newLocation - _this.me.y);
+			return _this.move(newLocation[0] - _this.me.x, newLocation[1] - _this.me.y);
 		}
 	}
 	

@@ -22,6 +22,7 @@ Scout.turn = function turn(_this){
 	
 	// First turn stuff.
 	if(_this.me.turn === 1){
+		_this.log("first turn stuff Scout");
 		mapHeight = _this.map.length;
 		mapWidth = _this.map[0].length;
 		Scout.starting_pos = [_this.me.x, _this.me.y];
@@ -54,7 +55,7 @@ Scout.turn = function turn(_this){
 					let message2 = message>>8;
 					
 					if(message1!==0){
-						let pos1 = nav.unpack(message1);
+						let pos1 = nav.unpack(message1, _this.map);
 						if(horizontal_symmetry){
 							castle_locations.push([mapWidth - 1 - pos1[0],pos1[1]]);
 						}
@@ -63,7 +64,7 @@ Scout.turn = function turn(_this){
 						}
 					}
 					if(message2!==0){
-						let pos2 = nav.unpack(message2);
+						let pos2 = nav.unpack(message2, _this.map);
 						if(horizontal_symmetry){
 							castle_locations.push([mapWidth - 1 - pos2[0],pos2[1]]);
 						}
@@ -79,14 +80,14 @@ Scout.turn = function turn(_this){
 	// End of first turn stuff.
 	
 		// Now to tell the home base what enemies we see.
-		let enemies = visibleRobots.filter(robot => robot.team !== _this.me.team);
-		let enemy_pilgrims = enemies.filter(robot => robot.unit === SPECS.PILGRIM);
-		let enemy_crusaders = enemies.filter(robot => robot.unit === SPECS.CRUSADER);
-		let enemy_prophets = enemies.filter(robot => robot.unit === SPECS.PROPHET);
-		let enemy_preachers = enemies.filter(robot => robot.unit === SPECS.PREACHER);
-		let enemy_castles = enemies.filter(robot => robot.unit === SPECS.CASTLE);
+	let enemies = visibleRobots.filter(robot => robot.team !== _this.me.team);
+	let enemy_pilgrims = enemies.filter(robot => robot.unit === SPECS.PILGRIM);
+	let enemy_crusaders = enemies.filter(robot => robot.unit === SPECS.CRUSADER);
+	let enemy_prophets = enemies.filter(robot => robot.unit === SPECS.PROPHET);
+	let enemy_preachers = enemies.filter(robot => robot.unit === SPECS.PREACHER);
+	let enemy_castles = enemies.filter(robot => robot.unit === SPECS.CASTLE);
 	if(_this.me.turn>2){
-		let bitMessage = (Math.min(enemy_pilgrims.length,4)<<6)+(Math.min(enemy_crusaders.length,4)<<4)+(Math.min(enemy_prophets.length,4)<<2)+Math.min(enemy_preachers.length,4);
+		let bitMessage = (Math.min(enemy_pilgrims.length,3)<<6)+(Math.min(enemy_crusaders.length,3)<<4)+(Math.min(enemy_prophets.length,3)<<2)+Math.min(enemy_preachers.length,3);
 		_this.castleTalk(bitMessage);
 		// End messaging to home.
 	}
@@ -103,7 +104,7 @@ Scout.turn = function turn(_this){
 			// Run away! This is a bugnav runaway:
 			let moves = nav.runAwayDirs([_this.me.x, _this.me.y], enemy_locations, Scout.moveDirs, _this.map, visibleRobotMap);
 			if(moves.length > 0){
-				let r = Math.floor(Math.random()*moves);
+				let r = Math.floor(Math.random()*moves.length);
 				return _this.move(moves[r][0], moves[r][1]);
 			}
 		}
@@ -113,7 +114,7 @@ Scout.turn = function turn(_this){
 			let dy = Math.round(1.49*(_this.me.x - closest[0])/dist);
 			let x = _this.me.x + kiting_dir*dx;
 			let y = _this.me.y + kiting_dir*dy;
-			if(_this.map[y][x] && visibleRobotMap[y][x]<=0){
+			if(nav.isOpen([x,y], _this.map, visibleRobotMap)){
 				return _this.move(kiting_dir*dx, kiting_dir*dy);
 			}
 			else{
@@ -129,19 +130,21 @@ Scout.turn = function turn(_this){
 		// Now move towards their castle. Stay at least r^2 = 65 away from any enemy unit!
 
 		let map_copy = [];
-		for(let i=0; i<_this.map;i++){
+		for(let i=0; i<mapHeight;i++){
 			map_copy.push(_this.map[i].slice());
 		}
+		_this.log(visibleRobots[0]);
 		visibleRobots.forEach(robot => map_copy[robot.y][robot.x] = false);
 		castle_locations.forEach(loc => map_copy[loc[1]][loc[0]] = true);
 		map_copy[_this.me.y][_this.me.x] = true;
-		let pathmap = nav.breadthFirstSearch(castle_locations, map_copy, Scout.moveDirs, _this);
+		let pathmap = nav.breadthFirstSearch(castle_locations, map_copy, Scout.moveDirs);
 		let dirs = pathmap[_this.me.y][_this.me.x];
 		for(let i = 0; i<dirs.length;i++){
-			let x = _this.me.x + dirs[0];
-			let y = _this.me.y + dirs[1];
+			let x = dirs[i][0];
+			let y = dirs[i][1];
+			_this.log("x, y:  " + x + ", " + y);
 			if(nav.isOpen([x, y],_this.map,visibleRobotMap)){
-				return _this.move(dirs[0],dirs[1]);
+				return _this.move(x - _this.me.x, y - _this.me.y);
 			}
 		}
 	}

@@ -22,16 +22,19 @@ var FUEL_MINER = 2;
 class MyRobot extends BCAbstractRobot {
     turn() {
 		this.log(""+this.me.turn);
+		this.log("pos:  " + this.me.x + ", " + this.me.y);
+		this.log("karbonite:  "+this.karbonite + "  fuel:  " + this.fuel);
 		if(this.me.unit === SPECS.PILGRIM) {
 			if(this.me.turn === 1){
 				let visibleRobotMap = this.getVisibleRobotMap();
 				for(let i = 0; i<buildDirs.length; i++){
 					let x = buildDirs[i][0]+this.me.x;
 					let y = buildDirs[i][1]+this.me.y;
-					if(visibleRobotMap[y][x]>0){
+					if(x>=0 && y>=0 && x<this.map[0].length && y<this.map.length && visibleRobotMap[y][x]>0){
 						let robot = this.getRobot(visibleRobotMap[y][x]);
 						if(robot.team === this.me.team && robot.unit === SPECS.CASTLE && robot.signal!==-1){
 							let message = robot.signal;
+							this.log("message:  "+message);
 							if(message === FUEL_MINER){
 								amKarb = false;
 								amFuel = true;
@@ -46,6 +49,12 @@ class MyRobot extends BCAbstractRobot {
 						}
 					}
 				}
+			}
+			if(amKarb || amFuel){
+				return Miner.turn(this, amKarb);
+			}
+			else{
+				return Scout.turn(this);
 			}
 		} else if(this.me.unit === SPECS.PREACHER) {
 			return Preacher.turn(this);

@@ -146,7 +146,7 @@ function leastDistance(your_location, location_list) {
 }
 
 function runAwayDirs(your_location, location_list, moveDirs, passable_map, robot_map) {
-	let leastDistAway = leastDistance(your_location, location_list);
+	let mostDistAway = leastDistance(your_location, location_list);
 	let bestMoves = [];
 	for(let i = 0; i<moveDirs.length; i++) {
 		let newLoc = [your_location[0] + moveDirs[i][0], your_location[1] + moveDirs[i][1]];
@@ -154,10 +154,10 @@ function runAwayDirs(your_location, location_list, moveDirs, passable_map, robot
 			continue;
 		}
 		let distAway = leastDistance(newLoc, location_list);
-		if (distAway>leastDistAway) {
-			leastDistAway = distAway;
+		if (distAway>mostDistAway) {
+			mostDistAway = distAway;
 			bestMoves = [moveDirs[i]];
-		} else if (distAway === leastDistAway) {
+		} else if (distAway === mostDistAway) {
 			bestMoves.push(moveDirs[i]);
 		}
 	}

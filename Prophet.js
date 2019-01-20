@@ -35,7 +35,7 @@ Prophet.turn = function turn(_this) {
 		
 		//determine enemy castle locations
 		for(let i = 0; i<visibleRobots.length;i++){
-			if(visibleRobots[i].unit === SPECS.CASTLE && visibleRobots[i].team === _this.me.team){
+			if(visibleRobots[i].unit === SPECS.CASTLE && nav.distSquared([visibleRobots[i].x, visibleRobots[i].y], [_this.me.x, _this.me.y])<=2 && visibleRobots[i].team === _this.me.team){
 				// Push the castle location.
 				if(horizontal_symmetry){
 					castle_locations.push([mapWidth - 1 - visibleRobots[i].x, visibleRobots[i].y]);
@@ -50,7 +50,7 @@ Prophet.turn = function turn(_this) {
 					let message2 = message>>8;
 					
 					if(message1!==0){
-						let pos1 = nav.unpack(message1);
+						let pos1 = nav.unpack(message1, _this.map);
 						if(horizontal_symmetry){
 							castle_locations.push([mapWidth - 1 - pos1[0],pos1[1]]);
 						}
@@ -59,7 +59,7 @@ Prophet.turn = function turn(_this) {
 						}
 					}
 					if(message2!==0){
-						let pos2 = nav.unpack(message2);
+						let pos2 = nav.unpack(message2, _this.map);
 						if(horizontal_symmetry){
 							castle_locations.push([mapWidth - 1 - pos2[0],pos2[1]]);
 						}
@@ -88,19 +88,18 @@ Prophet.turn = function turn(_this) {
 		//get rid of goals we can see have no enemies
 		for(let i = temp_goals.length - 1; i>=0; i--) {
 			let loc = temp_goals[i];
-			if (distSquared(loc, [_this.me.x, _this.me.y])<=16) {
+			if (nav.distSquared(loc, [_this.me.x, _this.me.y])<=16) {
 				temp_goals.splice(i, 1);
 			}
 		}
 		//get rid of castle locations if we can see they are destroyed
 		for(let i = castle_locations.length - 1; i>=0; i--) {
-			let loc = temp_goals[i];
-			if (distSquared(loc, [_this.me.x, _this.me.y])<=16) {
+			let loc = castle_locations[i];
+			if (nav.distSquared(loc, [_this.me.x, _this.me.y])<=16) {
 				castle_locations.splice(i, 1);
 			}
 		}
 	}
-	
 	//run away from close enemies
 	if(closeEnemies.length > 0) {
 		let closeEnemyLocations = closeEnemies.map(enemy => [enemy.x, enemy.y]);
@@ -125,8 +124,6 @@ Prophet.turn = function turn(_this) {
 		return _this.attack(closest.x - _this.me.x, closest.y - _this.me.y);
 	}
 	
-	
-	
 	//Copy map to be able to edit it.
 	let map_copy = [];
 	for(let i = 0; i<mapHeight; i++) {
@@ -134,18 +131,19 @@ Prophet.turn = function turn(_this) {
 	}
 	//make friends impassable
 	friends.forEach(friend => map_copy[friend.y][friend.x] = false);
+	map_copy[_this.me.y][_this.me.x] = true;
 	
 	if(temp_goals.length>0) {
-		let bfsMap = nav.breadthFirstSearch(temp_goals, map_copy, Prophet.moveDirs, _this);
+		let bfsMap = nav.breadthFirstSearch(temp_goals, map_copy, Prophet.moveDirs);
 		if(bfsMap[_this.me.y][_this.me.x].length > 0) {
 			let newLocation = bfsMap[_this.me.y][_this.me.x][Math.floor(Math.random()*bfsMap[_this.me.y][_this.me.x].length)];
-			return _this.move(newLocation - _this.me.x, newLocation - _this.me.y);
+			return _this.move(newLocation[0] - _this.me.x, newLocation[1] - _this.me.y);
 		}
 	} else if(castle_locations.length>0) {
-		let bfsMap = nav.breadthFirstSearch(castle_locations, map_copy, Prophet.moveDirs, _this);
+		let bfsMap = nav.breadthFirstSearch(castle_locations, map_copy, Prophet.moveDirs);
 		if(bfsMap[_this.me.y][_this.me.x].length > 0) {
 			let newLocation = bfsMap[_this.me.y][_this.me.x][Math.floor(Math.random()*bfsMap[_this.me.y][_this.me.x].length)];
-			return _this.move(newLocation - _this.me.x, newLocation - _this.me.y);
+			return _this.move(newLocation[0] - _this.me.x, newLocation[1] - _this.me.y);
 		}
 	}
 	

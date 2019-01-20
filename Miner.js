@@ -2,12 +2,13 @@ import {
 	SPECS
 } from 'battlecode';
 
-import nav from './nav/';
+import nav from './nav.js';
 
 var Miner = {};
 
 Miner.moveDirs = [[1,0],[-1,0],[0,1],[0,-1],[1,1],[1,-1],[-1,1],[-1,-1],[2,0],[-2,0],[0,2],[0,-2]];
 Miner.giveDirs = [[-1, -1], [-1, 0], [-1, 1], [0, -1], [0, 1], [1, -1], [1, 0], [1, 1]];
+Miner.aroundDirs = [[-5, 0], [-4, -1], [-4, 0], [-4, 1], [-3, -2], [-3, -1], [-3, 0], [-3, 1], [-3, 2], [-2, -3], [-2, -2], [-2, -1], [-2, 0], [-2, 1], [-2, 2], [-2, 3], [-1, -4], [-1, -3], [-1, -2], [-1, -1], [-1, 0], [-1, 1], [-1, 2], [-1, 3], [-1, 4], [0, -5], [0, -4], [0, -3], [0, -2], [0, -1], [0, 0], [0, 1], [0, 2], [0, 3], [0, 4], [0, 5], [1, -4], [1, -3], [1, -2], [1, -1], [1, 0], [1, 1], [1, 2], [1, 3], [1, 4], [2, -3], [2, -2], [2, -1], [2, 0], [2, 1], [2, 2], [2, 3], [3, -2], [3, -1], [3, 0], [3, 1], [3, 2], [4, -1], [4, 0], [4, 1], [5, 0]];
 Miner.myResources = 1;
 Miner.areYouUsingResources = 2;
 
@@ -20,12 +21,14 @@ let castle_locations = [];
 let depot_goals = [];
 let resource_goals = [];
 let closeChurch = false;
+let askedIDs = [];
+
 
 Miner.turn = function turn(_this, goForKarb) {
 	let visibleRobotMap = _this.getVisibleRobotMap();
 	let visibleRobots = _this.getVisibleRobots();
-	
-	if (_this.turn === 1) {
+	if (_this.me.turn === 1) {
+		_this.log("first turn stuff");
 		// Find initial values, and places to go to.
 		mapWidth = _this.karbonite_map[0].length;
 		mapHeight = _this.karbonite_map.length;
@@ -44,7 +47,9 @@ Miner.turn = function turn(_this, goForKarb) {
 						for (let i = 0; i < Miner.giveDirs.length; i++) {
 							let new_x = x + Miner.giveDirs[i][0];
 							let new_y = y + Miner.giveDirs[i][1];
-							depot_goals.push([new_x, new_y]);
+							if(nav.isOnPassableMap([new_x, new_y], _this.map)) {
+								depot_goals.push([new_x, new_y]);
+							}
 						}
 					}
 				}
@@ -84,8 +89,8 @@ Miner.turn = function turn(_this, goForKarb) {
 		// First check if there are nearby pilgrims, and tell them that _this is OUR mine.
 		for (let i = 0; i < visibleRobots.length; i++) {
 			if (visibleRobots[i].unit == SPECS.PILGRIM && visibleRobots[i].team === _this.me.team && visibleRobots[i].signal == Miner.areYouUsingResources) {
-				let d = Math.pow(Math.ceil(Math.sqrt(distSquared([_this.me.x, _this.me.y], [visibleRobots[i].x, visibleRobots[i].y]))),2);
-				if (d <= 16) { // If it is relatively cheap to signal.
+				let d = Math.pow(Math.ceil(Math.sqrt(nav.distSquared([_this.me.x, _this.me.y], [visibleRobots[i].x, visibleRobots[i].y]))),2);
+				if (true) { // If it is relatively cheap to signal.
 					_this.signal(Miner.myResources, d);
 				}
 			}
@@ -93,9 +98,9 @@ Miner.turn = function turn(_this, goForKarb) {
 		// Now can we (and should we) build a church right by?
 		// Is there already a nearby church?
 		if (!closeChurch) {
-			for (let i = 0; i < aroundDirs.length; i++) {
-				x = _this.me.x + aroundDirs[i][0];
-				y = _this.me.y + aroundDirs[i][1];
+			for (let i = 0; i < Miner.aroundDirs.length; i++) {
+				let x = _this.me.x + Miner.aroundDirs[i][0];
+				let y = _this.me.y + Miner.aroundDirs[i][1];
 				if (x >= 0 && y >= 0 && x < mapWidth && y < mapHeight && visibleRobotMap[y][x] > 0) {
 					if (_this.getRobot(visibleRobotMap[y][x]).unit <= 1) {
 						closeChurch = true; // Yep found. Now append _this church to our depot goals.
@@ -125,12 +130,13 @@ Miner.turn = function turn(_this, goForKarb) {
 			map_copy.push(_this.map[i].slice());
 		}
 		visibleRobots.forEach(function(friend) {
-			if (friend.unit >= 2) {
+			if (friend.unit > 2) {
 				map_copy[friend.y][friend.x] = false;
 			}
 		});
 		map_copy[_this.me.y][_this.me.x] = true;
 		// Is it in search of resources?
+		let path;
 		if ((goForKarb && _this.me.karbonite < 20) || (!goForKarb && _this.me.fuel < 100)) {
 			// First take out any mines that other pilgrims have taken:
 			for (let i = resource_goals.length - 1; i >= 0; i--) {
@@ -149,7 +155,7 @@ Miner.turn = function turn(_this, goForKarb) {
 						}
 					}
 					if (!alreadyAsked && r.unit == SPECS.PILGRIM) {
-						let d = Math.pow(Math.ceil(Math.sqrt(distSquared([r.x, r.y], [_this.me.x, _this.me.y]))), 2);
+						let d = Math.pow(Math.ceil(Math.sqrt(nav.distSquared([r.x, r.y], [_this.me.x, _this.me.y]))), 2);
 						if (d <= 16) {
 							_this.signal(Miner.areYouUsingResources, d);
 						}
@@ -159,7 +165,7 @@ Miner.turn = function turn(_this, goForKarb) {
 			// Let's get our best path now.
 			//resource_goals.forEach(g => map_copy[g[1]][g[0]] = true);
 			//map_copy[_this.me.y][_this.me.x] = true;
-			path = breadthFirstSearch(resource_goals, map_copy, moveDirs, _this);
+			path = nav.breadthFirstSearch(resource_goals, map_copy, Miner.moveDirs);
 		} else { // We want to return our resources to a church/chapel.
 			// Let's first see if it is possible to give our stuff, then try to move if it isn't possible.
 			for (let i = 0; i < Miner.giveDirs.length; i++) {
@@ -177,7 +183,10 @@ Miner.turn = function turn(_this, goForKarb) {
 			}
 
 			// Well that didn't work, so let's just move towards a church/chapel.
-			path = breadthFirstSearch(depot_goals, map_copy, moveDirs, _this);
+			//_this.log(map_copy[0]);
+			//_this.log(depot_goals);
+			//_this.log(Miner.moveDirs);
+			path = nav.breadthFirstSearch(depot_goals, map_copy, Miner.moveDirs);
 		}
 		let dirs = path[_this.me.y][_this.me.x];
 		for (let i = 0; i < dirs.length; i++) {
