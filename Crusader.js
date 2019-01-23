@@ -76,6 +76,11 @@ Crusader.turn = function turn(_this) {
 	let enemies = visibleRobots.filter(robot => robot.team !== _this.me.team);
 	let attackableEnemies = enemies.filter(enemy => nav.distSquared([enemy.x, enemy.y], [_this.me.x, _this.me.y]) <= 16);
 	
+	let enemy_prophets = enemies.filter(enemy => enemy.unit === SPECS.PROPHET);
+	if(enemy_prophets.length > 2){
+		// This means that the prophets can't shoot at us (the >2 stops it from trigerring a rush the instant it sees 1 prophet).
+		_this.castle_talk(124); // Honestly, it doesn't matter what we castle talk...
+	}
 	//make crusaders chase enemies they see
 	if(enemies.length>0) {
 		temp_goals = enemies.map(enemy => [enemy.x, enemy.y]);

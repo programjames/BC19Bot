@@ -11,6 +11,10 @@ let temp_goals = [];
 let mapWidth;
 let mapHeight;
 let horizontal_symmetry = true;
+// Should we rush at the enemy (if true), or stay in our lattice (if false)?
+var inWave = false;
+let lattice_locations = [];
+
 Preacher.turn = function turn(_this) {
 	let visibleRobotMap = _this.getVisibleRobotMap();
 	let visibleRobots = _this.getVisibleRobots();
@@ -36,7 +40,7 @@ Preacher.turn = function turn(_this) {
 		
 		//determine enemy castle locations
 		for(let i = 0; i<visibleRobots.length;i++){
-			if(visibleRobots[i].unit === SPECS.CASTLE && visibleRobots[i].team === _this.me.team){
+			if(visibleRobots[i].unit === SPECS.CASTLE && nav.distSquared([visibleRobots[i].x, visibleRobots[i].y], [_this.me.x, _this.me.y])<=2 && visibleRobots[i].team === _this.me.team){
 				// Push the castle location.
 				if(horizontal_symmetry){
 					castle_locations.push([mapWidth - 1 - visibleRobots[i].x, visibleRobots[i].y]);
@@ -44,29 +48,52 @@ Preacher.turn = function turn(_this) {
 				else{
 					castle_locations.push([visibleRobots[i].x, mapHeight - 1 - visibleRobots[i].y]);
 				}
-				// If the signal is -1, assume that there is no other castle.
-				let message = visibleRobots[i].signal;
-				if(message!==-1){
-					let message1 = message%256;
-					let message2 = message>>8;
-					
-					if(message1!==0){
-						let pos1 = nav.unpack(message1, _this.map);
-						if(horizontal_symmetry){
-							castle_locations.push([mapWidth - 1 - pos1[0],pos1[1]]);
-						}
-						else {
-							castle_locations.push([pos1[0],mapHeight - 1 - pos1[1]]);
-						}
+			}
+		}
+		//add impassable/passable to lattice locations
+		for(let i = 0; i<mapHeight; i++) {
+			lattice_locations.push(_this.map[i].slice());
+		}
+		//take out some values from lattice locations
+		for(let x = 0; x<mapWidth; x++) {
+			for(let y = 0; y<mapHeight; y++) {
+				if ((x+y)%2 === 0) {
+					lattice_locations[y][x] = false;
+				}
+			}
+		}
+	}
+	// Check if we are getting a signal to rush at the enemy!
+	for(let i = 0; i<visibleRobots.length; i++){
+		if(visibleRobots[i].unit === SPECS.CASTLE && visibleRobots[i].team === _this.me.team){
+			if(horizontal_symmetry){
+				castle_locations.push([mapWidth - 1 - visibleRobots[i].x, visibleRobots[i].y]);
+			}
+			else{
+				castle_locations.push([visibleRobots[i].x, mapHeight - 1 - visibleRobots[i].y]);
+			}
+			let message = visibleRobots[i].signal;
+			if(message!==-1){
+				inWave = true;
+				let message1 = message%256;
+				let message2 = message>>8;
+				
+				if(message1!==0){
+					let pos1 = nav.unpack(message1, _this.map);
+					if(horizontal_symmetry){
+						castle_locations.push([mapWidth - 1 - pos1[0],pos1[1]]);
 					}
-					if(message2!==0){
-						let pos2 = nav.unpack(message2, _this.map);
-						if(horizontal_symmetry){
-							castle_locations.push([mapWidth - 1 - pos2[0],pos2[1]]);
-						}
-						else {
-							castle_locations.push([pos2[0],mapHeight - 1 - pos2[1]]);
-						}
+					else {
+						castle_locations.push([pos1[0],mapHeight - 1 - pos1[1]]);
+					}
+				}
+				if(message2!==0){
+					let pos2 = nav.unpack(message2, _this.map);
+					if(horizontal_symmetry){
+						castle_locations.push([mapWidth - 1 - pos2[0],pos2[1]]);
+					}
+					else {
+						castle_locations.push([pos2[0],mapHeight - 1 - pos2[1]]);
 					}
 				}
 			}
@@ -76,10 +103,7 @@ Preacher.turn = function turn(_this) {
 	
 	let friends = visibleRobots.filter(robot => robot.team === _this.me.team);
 	let enemies = visibleRobots.filter(robot => robot.team !== _this.me.team);
-	
-	////_this.log("got here 80");
 	if(enemies.length>0) {
-		//_this.log("got here 82");
 		let bestAttackDir = -1;
 		let enemiesHarmed = -10000000;
 		for(let i = 0; i<Preacher.attackDirs.length; i++) {
@@ -92,10 +116,14 @@ Preacher.turn = function turn(_this) {
 			if (!_this.map[new_y][new_x]) {
 				continue;
 			}
-			//_this.log("got here 96");
 			let tempEnemiesHarmed = 0;
 			for(let j = 0; j<Preacher.splashDirs.length; j++) {
-				let id = visibleRobotMap[new_y + Preacher.splashDirs[j][1]][new_x + Preacher.splashDirs[j][0]];
+				let np_x = new_x + Preacher.splashDirs[j][0];
+				let np_y = new_y + Preacher.splashDirs[j][1];
+				if(np_x<0 || np_y<0 || np_x>=mapWidth || np_y>=mapHeight){
+					continue;
+				}
+				let id = visibleRobotMap[np_y][np_x];
 				if(id>0) {
 					let robot = _this.getRobot(id);
 					if(robot.team === _this.me.team) {
@@ -109,8 +137,6 @@ Preacher.turn = function turn(_this) {
 				bestAttackDir = dir;
 				enemiesHarmed = tempEnemiesHarmed;
 			}
-			////_this.log(bestAttackDir);
-			////_this.log(dir);
 		}
 		
 		return _this.attack(bestAttackDir[0], bestAttackDir[1]);
@@ -130,29 +156,53 @@ Preacher.turn = function turn(_this) {
 			}
 		}
 	}
-	//Copy map to be able to edit it.
-	let map_copy = [];
-	for(let i = 0; i<mapHeight; i++) {
-		map_copy.push(_this.map[i].slice());
-	}
-	//make friends impassable
-	friends.forEach(friend => map_copy[friend.y][friend.x] = false);
-	map_copy[_this.me.y][_this.me.x] = true;
-	////_this.log("got here 123");
-	
-	if(temp_goals.length>0) {
-		////_this.log("got here 126");
-		let bfsMap = nav.breadthFirstSearch(temp_goals, map_copy, Preacher.moveDirs);
-		if(bfsMap[_this.me.y][_this.me.x].length > 0) {
-			let newLocation = bfsMap[_this.me.y][_this.me.x][Math.floor(Math.random()*bfsMap[_this.me.y][_this.me.x].length)];
-			return _this.move(newLocation[0] - _this.me.x, newLocation[1] - _this.me.y);
+	// If we are in a wave attacking against the castles, we want to run at them!
+	if(inWave){
+		//Copy map to be able to edit it.
+		let map_copy = [];
+		for(let i = 0; i<mapHeight; i++) {
+			map_copy.push(_this.map[i].slice());
 		}
-	} else if(castle_locations.length>0) {
-		////_this.log("got here 133");
-		let bfsMap = nav.breadthFirstSearch(castle_locations, map_copy, Preacher.moveDirs);
-		if(bfsMap[_this.me.y][_this.me.x].length > 0) {
-			let newLocation = bfsMap[_this.me.y][_this.me.x][Math.floor(Math.random()*bfsMap[_this.me.y][_this.me.x].length)];
-			return _this.move(newLocation[0] - _this.me.x, newLocation[1] - _this.me.y);
+		//make friends impassable
+		friends.forEach(friend => map_copy[friend.y][friend.x] = false);
+		map_copy[_this.me.y][_this.me.x] = true;
+		
+		if(temp_goals.length>0) {
+			let bfsMap = nav.breadthFirstSearch(temp_goals, map_copy, Preacher.moveDirs);
+			if(bfsMap[_this.me.y][_this.me.x].length > 0) {
+				let newLocation = bfsMap[_this.me.y][_this.me.x][Math.floor(Math.random()*bfsMap[_this.me.y][_this.me.x].length)];
+				return _this.move(newLocation[0] - _this.me.x, newLocation[1] - _this.me.y);
+			}
+		} else if(castle_locations.length>0) {
+			let bfsMap = nav.breadthFirstSearch(castle_locations, map_copy, Preacher.moveDirs);
+			if(bfsMap[_this.me.y][_this.me.x].length > 0) {
+				let newLocation = bfsMap[_this.me.y][_this.me.x][Math.floor(Math.random()*bfsMap[_this.me.y][_this.me.x].length)];
+				return _this.move(newLocation[0] - _this.me.x, newLocation[1] - _this.me.y);
+			}
+		}
+	}
+	else{
+		//Copy map to be able to edit it.
+		let map_copy = [];
+		for(let i = 0; i<mapHeight; i++) {
+			map_copy.push(_this.map[i].slice());
+		}
+		//make friends impassable
+		friends.forEach(friend => map_copy[friend.y][friend.x] = false);
+		//take friends off lattice
+		friends.forEach(function(friend){if(friend.id!==_this.me.id){lattice_locations[friend.y][friend.x] = false}});
+		map_copy[_this.me.y][_this.me.x] = true;
+		
+		if(temp_goals.length === 0 && (_this.me.x + _this.me.y)%2 === 0) {
+			temp_goals.push(nav.nearestLatticeLocation(lattice_locations, [_this.me.x, _this.me.y]));
+			
+		}
+		if(temp_goals.length>0) {
+			let bfsMap = nav.breadthFirstSearch(temp_goals, map_copy, Preacher.moveDirs);
+			if(bfsMap[_this.me.y][_this.me.x].length > 0) {
+				let newLocation = bfsMap[_this.me.y][_this.me.x][Math.floor(Math.random()*bfsMap[_this.me.y][_this.me.x].length)];
+				return _this.move(newLocation[0] - _this.me.x, newLocation[1] - _this.me.y);
+			}
 		}
 	}
 	

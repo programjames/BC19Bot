@@ -21,9 +21,7 @@ var FUEL_MINER = 4;
 
 class MyRobot extends BCAbstractRobot {
     turn() {
-		//this.log(""+this.me.turn);
-		//this.log("pos:  " + this.me.x + ", " + this.me.y);
-		//this.log("karbonite:  "+this.karbonite + "  fuel:  " + this.fuel);
+		//this.log(this.fuel);
 		if(this.me.unit === SPECS.PILGRIM) {
 			if(this.me.turn === 1){
 				let visibleRobotMap = this.getVisibleRobotMap();
@@ -34,7 +32,6 @@ class MyRobot extends BCAbstractRobot {
 						let robot = this.getRobot(visibleRobotMap[y][x]);
 						if(robot.team === this.me.team && robot.unit === SPECS.CASTLE && robot.signal!==-1){
 							let message = robot.signal;
-							//this.log("message:  "+message);
 							if(message === FUEL_MINER){
 								amKarb = false;
 								amFuel = true;

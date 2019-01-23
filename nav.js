@@ -197,6 +197,24 @@ function pack(loc) {
 	return (Math.floor(loc[0]/4)<<4) + Math.floor(loc[1]/4);
 }
 
+function nearestLatticeLocation(lattices, pos) {
+	let best = [];
+	let bestDist = -1;
+	for (let y = 0; y<lattices.length; y++) {
+		for (let x = 0; x<lattices[0].length; x++) {
+			if(!lattices[y][x]) {
+				continue;
+			}
+			let dist = nav.distSquared([x,y], pos);
+			if(bestDist === -1 || dist<bestDist) {
+				best = [x,y];
+				bestDist = dist;
+			}
+		}
+	}
+	return best;
+}
+
 var nav = {};
 nav.distSquared = distSquared;
 nav.breadthFirstSearch = breadthFirstSearch;
@@ -209,4 +227,5 @@ nav.isOnPassableMap = isOnPassableMap;
 nav.closestLocation = closestLocation;
 nav.leastDistance = leastDistance;
 nav.runAwayDirs = runAwayDirs;
+nav.nearestLatticeLocation = nearestLatticeLocation;
 export default nav;
