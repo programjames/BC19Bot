@@ -58,7 +58,7 @@ Prophet.turn = function turn(_this) {
 		//take out some values from lattice locations
 		for(let x = 0; x<mapWidth; x++) {
 			for(let y = 0; y<mapHeight; y++) {
-				if ((x+y)%2 === 0) {
+				if ((x+y)%2 === 0 || _this.karbonite_map[y][x] || _this.fuel_map[y][x]) {
 					lattice_locations[y][x] = false;
 				}
 			}

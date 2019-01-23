@@ -31,7 +31,7 @@ let askedIDs = [];
 let enemy_locations = [];
 
 
-Miner.turn = function turn(_this, goForKarb) {
+Miner.turn = function turn(_this, goForKarb, goForFuel) {
 	let visibleRobotMap = _this.getVisibleRobotMap();
 	let visibleRobots = _this.getVisibleRobots();
 	if (_this.me.turn === 1) {
@@ -42,10 +42,14 @@ Miner.turn = function turn(_this, goForKarb) {
 		//add resource and depot locations
 		for (let y = 0; y < mapHeight; y++) {
 			for (let x = 0; x < mapWidth; x++) {
-				if (goForKarb && _this.karbonite_map[y][x]) {
-					resource_goals.push([x, y]);
-				} else if (!goForKarb && _this.fuel_map[y][x]) {
-					resource_goals.push([x, y]);
+				if (_this.karbonite_map[y][x]) {
+					if(goForKarb){
+						resource_goals.push([x, y]);
+					}
+				} else if (_this.fuel_map[y][x]) {
+					if(goForFuel){
+						resource_goals.push([x, y]);
+					}
 				}
 				if (visibleRobotMap[y][x] > 0) {
 					let r = _this.getRobot(visibleRobotMap[y][x]);
@@ -72,7 +76,7 @@ Miner.turn = function turn(_this, goForKarb) {
 	let enemies = [];
 	let myTeam = _this.me.team;
 	visibleRobots.forEach(function(robot) {
-		if (robot.team === myTeam) {
+		if (robot.team === _this.me.team) {
 			friends.push(robot);
 		} else if (robot.unit > 2) {
 			enemies.push(robot);
@@ -126,10 +130,16 @@ Miner.turn = function turn(_this, goForKarb) {
 				let x = _this.me.x + Miner.aroundDirs[i][0];
 				let y = _this.me.y + Miner.aroundDirs[i][1];
 				if (x >= 0 && y >= 0 && x < mapWidth && y < mapHeight && visibleRobotMap[y][x] > 0) {
-					if (_this.getRobot(visibleRobotMap[y][x]).unit <= 1) {
+					let r = _this.getRobot(visibleRobotMap[y][x])
+					if (r.unit <= 1 && r.team === _this.me.team) {
+						for (let j = 0; j < Miner.giveDirs.length; j++) {
+							let new_x = x + Miner.giveDirs[j][0];
+							let new_y = y + Miner.giveDirs[j][1];
+							if(nav.isOnPassableMap([new_x, new_y], _this.map)) {
+								depot_goals.push([new_x, new_y]);
+							}
+						}
 						closeChurch = true; // Yep found. Now append _this church to our depot goals.
-						depot_goals.push([x, y]);
-						break;
 					}
 				}
 			}
@@ -138,7 +148,7 @@ Miner.turn = function turn(_this, goForKarb) {
 				for (let i = 0; i < Miner.giveDirs.length; i++) {
 					let x = _this.me.x + Miner.giveDirs[i][0];
 					let y = _this.me.y + Miner.giveDirs[i][1];
-					if (x >= 0 && x < mapWidth && y >= 0 && y < mapHeight && _this.map[y][x] && visibleRobotMap[y][x] <= 0 && !_this.karbonite_map[y][x] && !_this.fuel_map[y][x]) {
+					if (_this.fuel>=200 && _this.karbonite>=50 && x >= 0 && x < mapWidth && y >= 0 && y < mapHeight && _this.map[y][x] && visibleRobotMap[y][x] <= 0 && !_this.karbonite_map[y][x] && !_this.fuel_map[y][x]) {
 						return _this.buildUnit(1, Miner.giveDirs[i][0], Miner.giveDirs[i][1]);
 					}
 				}
@@ -153,15 +163,11 @@ Miner.turn = function turn(_this, goForKarb) {
 		for (let i = 0; i < _this.map.length; i++) {
 			map_copy.push(_this.map[i].slice());
 		}
-		visibleRobots.forEach(function(friend) {
-			if (friend.unit >= 0) {
-				map_copy[friend.y][friend.x] = false;
-			}
-		});
+		friends.forEach(friend => map_copy[friend.y][friend.x] = false);
 		map_copy[_this.me.y][_this.me.x] = true;
 		// Is it in search of resources?
 		let path;
-		if ((goForKarb && _this.me.karbonite < 20) || (!goForKarb && _this.me.fuel < 100)) {
+		if (!(goForKarb && _this.me.karbonite >= 20) && !(goForFuel && _this.me.fuel >= 100)) {
 			// First take out any mines that other pilgrims have taken:
 			for (let i = resource_goals.length - 1; i >= 0; i--) {
 				if (visibleRobotMap[resource_goals[i][1]][resource_goals[i][0]] > 0 && (resource_goals[i][1] !== _this.me.y || resource_goals[i][0] !== _this.me.x)) {
@@ -174,6 +180,8 @@ Miner.turn = function turn(_this, goForKarb) {
 			}
 			// Let's get our best path now.
 			path = nav.breadthFirstSearch(resource_goals, map_copy, Miner.moveDirs);
+			//_this.log(goForFuel);
+			//_this.log(path[_this.me.y][_this.me.y]);
 		} else { // We want to return our resources to a church/chapel.
 			// Let's first see if it is possible to give our stuff, then try to move if it isn't possible.
 			for (let i = 0; i < Miner.giveDirs.length; i++) {
@@ -191,14 +199,21 @@ Miner.turn = function turn(_this, goForKarb) {
 			}
 
 			// Well that didn't work, so let's just move towards a church/chapel.
-			
-			path = nav.breadthFirstSearch(depot_goals, map_copy, Miner.moveDirs);
+			let temp_depot = [];
+			for(let i = 0; i<depot_goals.length;i++){
+				if(map_copy[depot_goals[i][1]][depot_goals[i][0]]){
+					temp_depot.push(depot_goals[i].slice())
+				}
+			}
+			path = nav.breadthFirstSearch(temp_depot, map_copy, Miner.moveDirs);
 		}
 		let dirs = path[_this.me.y][_this.me.x];
 		for (let i = 0; i < dirs.length; i++) {
 			if (map_copy[dirs[i][1]][dirs[i][0]]) {
 				let dx = dirs[i][0] - _this.me.x;
 				let dy = dirs[i][1] - _this.me.y;
+				_this.log(goForFuel);
+				_this.log("dx, dy:  "+dx+", "+dy);
 				return _this.move(dx, dy);
 			}
 		}

@@ -10,14 +10,16 @@ import Preacher from './Preacher.js';
 import Crusader from './Crusader.js';
 import Prophet from './Prophet.js';
 import Castle from './Castle.js';
+import Church from './Church.js';
 
 const buildDirs = [[1,0],[-1,0],[0,1],[0,-1],[1,1],[1,-1],[-1,1],[-1,-1]];
 var amScout = false;
 var amKarb = true;
-var amFuel = false;
+var amFuel = true;
 
 var KARB_MINER = 3;
 var FUEL_MINER = 4;
+var BOTH_MINER = 5;
 
 class MyRobot extends BCAbstractRobot {
     turn() {
@@ -37,7 +39,12 @@ class MyRobot extends BCAbstractRobot {
 								amFuel = true;
 							}
 							else if(message === KARB_MINER){
-								// pass
+								amKarb = true;
+								amFuel = false;
+							}
+							else if(message === BOTH_MINER){
+								amKarb = true;
+								amFuel = true;
 							}
 							else{
 								amKarb = false;
@@ -48,7 +55,7 @@ class MyRobot extends BCAbstractRobot {
 				}
 			}
 			if(amKarb || amFuel){
-				return Miner.turn(this, amKarb);
+				return Miner.turn(this, amKarb, amFuel);
 			}
 			else{
 				return Scout.turn(this);
@@ -61,6 +68,8 @@ class MyRobot extends BCAbstractRobot {
 			return Crusader.turn(this);
 		} else if(this.me.unit === SPECS.CASTLE) {
 			return Castle.turn(this);
+		} else if(this.me.unit === SPECS.CHURCH){
+			return Church.turn(this);
 		}
 	}
 }
