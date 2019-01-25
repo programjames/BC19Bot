@@ -27,7 +27,7 @@ var karbonite_spots = 0;
 
 // num of built stuff;
 var karbs_built = 0;
-var fuels_built = 0;
+var pilgrims_built = 0;
 var prophets_built = 0;
 var scouts_built = 0;
 var preachers_built = 0;
@@ -36,6 +36,7 @@ var crusaders_built = 0;
 // constant for signalling.
 var KARB_MINER = 3;
 var FUEL_MINER = 4;
+var BOTH_MINER = 5;
 
 var noSignalCount = 0;
 
@@ -243,26 +244,14 @@ Castle.turn = function turn(_this){
 				}
 			}
 		}
-		else if ((_this.fuel<_this.karbonite*5 || karbs_built>=max_karbs) && fuels_built<max_fuels && _this.karbonite>=60){
-			//build a karb guy.
+		else if (pilgrims_built+karbs_built<max_fuels+max_karbs && _this.karbonite>=60){
+			//build any guy.
 			for(let i = 0; i<Castle.buildDirs.length; i++){
 				let x = Castle.buildDirs[i][0]+_this.me.x;
 				let y = Castle.buildDirs[i][1]+_this.me.y;
 				if(nav.isOpen([x,y], _this.map, visibleRobotMap)){
-					fuels_built+=1;
-					_this.signal(FUEL_MINER, 2);
-					return _this.buildUnit(SPECS.PILGRIM, Castle.buildDirs[i][0], Castle.buildDirs[i][1]);
-				}
-			}
-		}
-		else if (karbs_built<max_karbs && _this.karbonite>=60){
-			// build a fuel miner.
-			for(let i = 0; i<Castle.buildDirs.length; i++){
-				let x = Castle.buildDirs[i][0]+_this.me.x;
-				let y = Castle.buildDirs[i][1]+_this.me.y;
-				if(nav.isOpen([x,y], _this.map, visibleRobotMap)){
-					karbs_built+=1;
-					_this.signal(KARB_MINER, 2);
+					pilgrims_built+=1;
+					_this.signal(BOTH_MINER, 2);
 					return _this.buildUnit(SPECS.PILGRIM, Castle.buildDirs[i][0], Castle.buildDirs[i][1]);
 				}
 			}

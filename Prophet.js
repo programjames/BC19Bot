@@ -3,18 +3,21 @@ import nav from './nav.js';
 
 var Prophet = {};
 Prophet.attackDirs = [[-4, 0], [-3, -2], [-3, -1], [-3, 0], [-3, 1], [-3, 2], [-2, -3], [-2, -2], [-2, -1], [-2, 0], [-2, 1], [-2, 2], [-2, 3], [-1, -3], [-1, -2], [-1, -1], [-1, 0], [-1, 1], [-1, 2], [-1, 3], [0, -4], [0, -3], [0, -2], [0, -1], [0, 1], [0, 2], [0, 3], [0, 4], [1, -3], [1, -2], [1, -1], [1, 0], [1, 1], [1, 2], [1, 3], [2, -3], [2, -2], [2, -1], [2, 0], [2, 1], [2, 2], [2, 3], [3, -2], [3, -1], [3, 0], [3, 1], [3, 2], [4, 0]];
-Prophet.moveDirs = [[1,0],[-1,0],[0,1],[0,-1],[1,1],[1,-1],[-1,1],[-1,-1],[2,0],[-2,0],[0,2],[0,-2]];
+Prophet.moveDirs = [[1,0],[-1,0],[0,1],[0,-1],[1,1],[1,-1],[-1,1]];
+Prophet.aroundDirs = [[-1, -1], [-1, 0], [-1, 1], [0, -1], [0, 1], [1, -1], [1, 0], [1, 1]];
 
 let castle_locations = [];
 let temp_goals = [];
 let mapWidth;
 let mapHeight;
 let horizontal_symmetry = true;
+let resource_goals = [];
 
 // Should we rush at the enemy (if true), or stay in our lattice (if false)?
 var inWave = false;
 
 let lattice_locations = [];
+let gotToResourceLocation = false;
 
 Prophet.turn = function turn(_this) {
 	let visibleRobotMap = _this.getVisibleRobotMap();
@@ -51,15 +54,25 @@ Prophet.turn = function turn(_this) {
 				}
 			}
 		}
-		//add impassable/passable to lattice locations
-		for(let i = 0; i<mapHeight; i++) {
-			lattice_locations.push(_this.map[i].slice());
-		}
-		//take out some values from lattice locations
-		for(let x = 0; x<mapWidth; x++) {
-			for(let y = 0; y<mapHeight; y++) {
-				if ((x+y)%2 === 0 || _this.karbonite_map[y][x] || _this.fuel_map[y][x]) {
-					lattice_locations[y][x] = false;
+		//find the resources.
+		for (let y = 0; y < mapHeight; y++) {
+			for (let x = 0; x < mapWidth; x++) {
+				if (_this.karbonite_map[y][x]) {
+					for(let i = 0; i<Prophet.aroundDirs.length; i++){
+						let new_x = Prophet.aroundDirs[i][0]+x;
+						let new_y = Prophet.aroundDirs[i][1]+y;
+						if(nav.isOnPassableMap([new_x, new_y],_this.map) && !_this.karbonite_map[new_y][new_x] && !_this.fuel_map[new_y][new_x]){
+							resource_goals.push([new_x,new_y]);
+						}
+					}
+				} else if (_this.fuel_map[y][x]) {
+					for(let i = 0; i<Prophet.aroundDirs.length; i++){
+						let new_x = Prophet.aroundDirs[i][0]+x;
+						let new_y = Prophet.aroundDirs[i][1]+y;
+						if(nav.isOnPassableMap([new_x, new_y],_this.map) && !_this.karbonite_map[new_y][new_x] && !_this.fuel_map[new_y][new_x]){
+							resource_goals.push([new_x,new_y]);
+						}
+					}
 				}
 			}
 		}
@@ -179,27 +192,40 @@ Prophet.turn = function turn(_this) {
 		}
 	}
 	else{
-		//Copy map to be able to edit it.
-		let map_copy = [];
-		for(let i = 0; i<mapHeight; i++) {
-			map_copy.push(_this.map[i].slice());
-		}
-		//make friends impassable
-		friends.forEach(friend => map_copy[friend.y][friend.x] = false);
-		//take friends off lattice
-		friends.forEach(function(friend){if(friend.id!==_this.me.id){lattice_locations[friend.y][friend.x] = false}});
-		map_copy[_this.me.y][_this.me.x] = true;
-		
-		if(temp_goals.length === 0 && (_this.me.x + _this.me.y)%2 === 0) {
-			temp_goals.push(nav.nearestLatticeLocation(lattice_locations, [_this.me.x, _this.me.y]));
-			
-		}
-		if(temp_goals.length>0) {
-			let bfsMap = nav.breadthFirstSearch(temp_goals, map_copy, Prophet.moveDirs);
-			if(bfsMap[_this.me.y][_this.me.x].length > 0) {
-				let newLocation = bfsMap[_this.me.y][_this.me.x][Math.floor(Math.random()*bfsMap[_this.me.y][_this.me.x].length)];
-				return _this.move(newLocation[0] - _this.me.x, newLocation[1] - _this.me.y);
+		// This is almost straight copied from pilgrim code. We want them to go to resource areas.
+		// First take out any mines that other prophets have taken:
+		if(!gotToResourceLocation){
+			for (let i = resource_goals.length - 1; i >= 0; i--) {
+				for(let j = 0; j<visibleRobots.length; j++){
+					let d = nav.distSquared(resource_goals[i], [visibleRobots[j].x, visibleRobots[j].y]);
+					//let my_d = nav.distSquared(resource_goals[i], [_this.me.x, _this.me.y]);
+					if(d<=10){
+						resource_goals.splice(i,1);
+						break;
+					}
+				}
 			}
+		}
+		if(_this.fuel_map[_this.me.y][_this.me.x] || _this.karbonite_map[_this.me.y][_this.me.x] || nav.leastDistance([_this.me.x, _this.me.y], resource_goals)>5){		
+			let map_copy = [];
+			for (let i = 0; i < _this.map.length; i++) {
+				map_copy.push(_this.map[i].slice());
+			}
+			visibleRobots.forEach(friend => map_copy[friend.y][friend.x] = false);
+			map_copy[_this.me.y][_this.me.x] = true;
+			// Let's get our best path now.
+			let path = nav.breadthFirstSearch(resource_goals, map_copy, Prophet.moveDirs);
+			let dirs = path[_this.me.y][_this.me.x];
+			for (let i = 0; i < dirs.length; i++) {
+				if (map_copy[dirs[i][1]][dirs[i][0]]) {
+					let dx = dirs[i][0] - _this.me.x;
+					let dy = dirs[i][1] - _this.me.y;
+					return _this.move(dx, dy);
+				}
+			}
+		}
+		else{
+			gotToResourceLocation = true;
 		}
 	}
 	

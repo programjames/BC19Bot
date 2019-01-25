@@ -97,7 +97,7 @@ Church.turn = function turn(_this){
 		for(let i = 0; i<Church.visibleDirs.length; i++){
 			let x = _this.me.x + Church.visibleDirs[i][0];
 			let y = _this.me.y + Church.visibleDirs[i][1];
-			if(_this.karbonite_map[y][x] || _this.fuel_map[y][x]){
+			if(nav.isOnMap([x,y], mapWidth, mapHeight) && (_this.karbonite_map[y][x] || _this.fuel_map[y][x])){
 				mining_spots+=1;
 			}
 		}
@@ -123,7 +123,7 @@ Church.turn = function turn(_this){
 		// Otherwise build prophets (to make a lattice).
 		
 		let friendly_pilgrims = friends.filter(robot => robot.unit === SPECS.PILGRIM);
-		if(friendly_pilgrims.length < mining_spots && _this.fuel>=50 && _this.karbonit>=10){
+		if(friendly_pilgrims.length < mining_spots && _this.fuel>=150 && _this.karbonit>=10){
 			// build pilgrim
 			for(let i = 0; i<Church.buildDirs.length; i++){
 				let x = Church.buildDirs[i][0]+_this.me.x;
@@ -135,7 +135,7 @@ Church.turn = function turn(_this){
 				}
 			}
 		}
-		else if(_this.fuel >=50 && _this.karbonite>=25){
+		else if(_this.fuel >=150 && _this.karbonite>=25){
 			//build prophet
 			for(let i = 0; i<Church.buildDirs.length; i++){
 				let x = Church.buildDirs[i][0]+_this.me.x;

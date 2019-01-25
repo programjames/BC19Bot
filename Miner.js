@@ -78,7 +78,7 @@ Miner.turn = function turn(_this, goForKarb, goForFuel) {
 	visibleRobots.forEach(function(robot) {
 		if (robot.team === _this.me.team) {
 			friends.push(robot);
-		} else if (robot.unit > 2) {
+		} else if (robot.unit > 2 || robot.unit === 0) {
 			enemies.push(robot);
 		}
 	});
@@ -88,8 +88,14 @@ Miner.turn = function turn(_this, goForKarb, goForFuel) {
 		//Run away from enemies
 		let enemyLocations = enemies.map(enemy => [enemy.x, enemy.y]);
 		enemy_locations.push(...enemyLocations);
+		/*for(var i = 0; i<resource_goals.length; i++){
+			if(nav.leastDistance(resource_goals[i], enemyLocations)<=89){
+				resource_goals.splice(i,1);
+				i-=1;
+			}
+		}*/
 		let closestLocation = nav.closestLocation([_this.me.x, _this.me.y], enemyLocations);
-		if(nav.distSquared(closestLocation, [_this.me.x, _this.me.y]) <= 64) {
+		if(nav.distSquared(closestLocation, [_this.me.x, _this.me.y]) <= 89) {
 			let bestMoves = nav.runAwayDirs([_this.me.x, _this.me.y], enemyLocations, Miner.moveDirs, _this.map, visibleRobotMap);
 			if(bestMoves.length>0) {
 				let dir = bestMoves[Math.floor(Math.random()*bestMoves.length)];
@@ -113,16 +119,7 @@ Miner.turn = function turn(_this, goForKarb, goForFuel) {
 	}
 
 	// _this is basically if we can mine.
-	if ((goForKarb && _this.karbonite_map[_this.me.y][_this.me.x] && _this.me.karbonite < 20) || (!goForKarb && _this.fuel_map[_this.me.y][_this.me.x] && _this.me.fuel < 100)) {
-		// First check if there are nearby pilgrims, and tell them that _this is OUR mine.
-		for (let i = 0; i < visibleRobots.length; i++) {
-			if (visibleRobots[i].unit == SPECS.PILGRIM && visibleRobots[i].team === _this.me.team && visibleRobots[i].signal == Miner.areYouUsingResources) {
-				let d = Math.pow(Math.ceil(Math.sqrt(nav.distSquared([_this.me.x, _this.me.y], [visibleRobots[i].x, visibleRobots[i].y]))),2);
-				if (true) { // If it is relatively cheap to signal.
-					_this.signal(Miner.myResources, d);
-				}
-			}
-		}
+	if ((goForKarb && _this.karbonite_map[_this.me.y][_this.me.x] && _this.me.karbonite < 20) || (goForFuel && _this.fuel_map[_this.me.y][_this.me.x] && _this.me.fuel < 100)) {
 		// Now can we (and should we) build a church right by?
 		// Is there already a nearby church?
 		if (!closeChurch) {
@@ -163,7 +160,7 @@ Miner.turn = function turn(_this, goForKarb, goForFuel) {
 		for (let i = 0; i < _this.map.length; i++) {
 			map_copy.push(_this.map[i].slice());
 		}
-		friends.forEach(friend => map_copy[friend.y][friend.x] = false);
+		visibleRobots.forEach(friend => map_copy[friend.y][friend.x] = false);
 		map_copy[_this.me.y][_this.me.x] = true;
 		// Is it in search of resources?
 		let path;
@@ -180,8 +177,6 @@ Miner.turn = function turn(_this, goForKarb, goForFuel) {
 			}
 			// Let's get our best path now.
 			path = nav.breadthFirstSearch(resource_goals, map_copy, Miner.moveDirs);
-			//_this.log(goForFuel);
-			//_this.log(path[_this.me.y][_this.me.y]);
 		} else { // We want to return our resources to a church/chapel.
 			// Let's first see if it is possible to give our stuff, then try to move if it isn't possible.
 			for (let i = 0; i < Miner.giveDirs.length; i++) {
@@ -212,8 +207,6 @@ Miner.turn = function turn(_this, goForKarb, goForFuel) {
 			if (map_copy[dirs[i][1]][dirs[i][0]]) {
 				let dx = dirs[i][0] - _this.me.x;
 				let dy = dirs[i][1] - _this.me.y;
-				_this.log(goForFuel);
-				_this.log("dx, dy:  "+dx+", "+dy);
 				return _this.move(dx, dy);
 			}
 		}

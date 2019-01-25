@@ -48,6 +48,7 @@ class MyRobot extends BCAbstractRobot {
 							}
 							else{
 								amKarb = false;
+								amFuel = false;
 								amScout = true;
 							}
 						}
