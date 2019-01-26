@@ -125,10 +125,20 @@ Castle.turn = function turn(_this){
 	
 	let closest_enemy_location = nav.closestLocation([_this.x, _this.y], enemy_locations);
 	if((enemies.length>0 || (enemy_locations.length>0 && nav.distSquared(closest_enemy_location, [_this.me.x, _this.me.y])<=300)) && friendly_prophets.length<3 && _this.karbonite>=25 && _this.fuel>=50) {
+		let bitSend = 0;
+		if(castle_locations.length === 0) {
+			bitSend = 0
+		} else if (castle_locations.length === 1) {
+			bitSend = nav.pack(castle_locations[0])<<8;
+		} else if (castle_locations.length === 2) {
+			bitSend = (nav.pack(castle_locations[0])<<8) + nav.pack(castle_locations[1]);
+		}
+		
 		for(let i = 0; i<Castle.buildDirs.length; i++){
 			let x = Castle.buildDirs[i][0]+_this.me.x;
 			let y = Castle.buildDirs[i][1]+_this.me.y;
 			if(nav.isOpen([x,y], _this.map, visibleRobotMap)){
+				_this.signal(bitSend, 2);
 				return _this.buildUnit(SPECS.PROPHET, Castle.buildDirs[i][0], Castle.buildDirs[i][1]);
 			}
 		}
@@ -207,14 +217,12 @@ Castle.turn = function turn(_this){
 		
 		if(_this.karbonite>=70 && _this.fuel>=5000) {
 			let bitSend = 0;
-			for(let i = 0; i<castle_locations.length; i++){
-				bitSend = bitSend<<4;
-				bitSend+=castle_locations[i][0];
-				bitSend = bitSend<<4;
-				bitSend+=castle_locations[i][1];
-			}
-			if(castle_locations.length === 1){
-				bitSend = bitSend<<8;
+			if(castle_locations.length === 0) {
+				bitSend = 0
+			} else if (castle_locations.length === 1) {
+				bitSend = nav.pack(castle_locations[0])<<8;
+			} else if (castle_locations.length === 2) {
+				bitSend = (nav.pack(castle_locations[0])<<8) + nav.pack(castle_locations[1]);
 			}
 			//_this.log("bit: "+bitSend);
 			for(let i = 0; i<Castle.buildDirs.length; i++){
