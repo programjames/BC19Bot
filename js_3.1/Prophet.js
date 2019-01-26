@@ -95,7 +95,7 @@ Prophet.turn = function turn(_this) {
 		let d2 = nav.distSquared([enemy.x, enemy.y], [_this.me.x, _this.me.y]);
 		return (d2 <= 64 && d2 >= 16);
 	});
-	let closeEnemies = enemies.filter(enemy => nav.distSquared([enemy.x, enemy.y], [_this.me.x, _this.me.y]) < 16);
+	let closeEnemies = enemies.filter(enemy => nav.distSquared([enemy.x, enemy.y], [_this.me.x, _this.me.y]) <= 26);
 	
 	//make Prophets chase enemies they see
 	if(enemies.length>0) {

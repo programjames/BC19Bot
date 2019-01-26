@@ -92,13 +92,14 @@ Church.turn = function turn(_this){
 				let y = Church.buildDirs[i][1]+_this.me.y;
 				if(nav.isOpen([x,y], _this.map, visibleRobotMap)){
 					_this.signal(BOTH_MINER, 2);
+					_this.castleTalk(1);
 					return _this.buildUnit(SPECS.PILGRIM, Church.buildDirs[i][0], Church.buildDirs[i][1]);
 				}
 			}
 		}
 	}
 	else{
-		if(_this.karbonite>=80 && _this.fuel>=125) {
+		if(_this.karbonite>=80 && _this.fuel>=5000) {
 			for(let i = 0; i<Church.buildDirs.length; i++){
 				let x = Church.buildDirs[i][0]+_this.me.x;
 				let y = Church.buildDirs[i][1]+_this.me.y;
@@ -106,17 +107,6 @@ Church.turn = function turn(_this){
 					return _this.buildUnit(SPECS.PROPHET, Church.buildDirs[i][0], Church.buildDirs[i][1]);
 				}
 			}
-		}
-	}
-	// Attack any enemies.
-	if(enemies.length > 0){
-		let enemy_locs = [];
-		enemies.forEach(robot => enemy_locs.push([robot.x, robot.y]));
-		let closest = nav.closestLocation([_this.me.x, _this.me.y], enemy_locs);
-		let dx = closest[0] - _this.me.x;
-		let dy = closest[1] - _this.me.y;
-		if(dx*dx + dy*dy <= 64){
-			return _this.attack(dx, dy);
 		}
 	}
 }

@@ -27,7 +27,6 @@ let resource_goals = [];
 let closeChurch = false;
 let askedIDs = [];
 
-let enemy_locations = [];
 
 
 Miner.turn = function turn(_this, goForKarb, goForFuel) {
@@ -131,11 +130,9 @@ Miner.turn = function turn(_this, goForKarb, goForFuel) {
 	// Uh oh! Enemy spotted.
 	if (enemies.length > 0) {
 		let enemyLocations = enemies.map(enemy => [enemy.x, enemy.y]);
-		enemy_locations.push(...enemyLocations);
 		
-		let friendly_buildings = friends.filter(friend => friend.unit <=1);
 		for(var i = resource_goals.length - 1; i>=0; i--){
-			if(nav.leastDistance(resource_goals[i], enemyLocations)<=50 && friendly_buildings.length === 0){
+			if(nav.leastDistance(resource_goals[i], enemyLocations)<=100){
 				resource_goals.splice(i,1);
 			}
 		}
@@ -150,24 +147,10 @@ Miner.turn = function turn(_this, goForKarb, goForFuel) {
 			}
 		}
 	}
-	for(let i = enemy_locations.length - 1; i>=0; i--) {
-		if(visibleRobotMap[enemy_locations[i][1]][enemy_locations[i][0]] === 0) {
-			enemy_locations.splice(i,1);
-		} else {
-			for (let j = 0; j<Miner.prophetAttackDirs; j++) {
-				let new_x = enemy_locations[i][0] + Miner.prophetAttackDirs[j][0];
-				let new_y = enemy_locations[i][1] + Miner.prophetAttackDirs[j][1];
-				if(nav.isOnMap([new_x, new_y], mapWidth, mapHeight)) {
-					map_copy[new_y][new_x] = false;
-					
-				}
-			}
-		}
-	}
 	
 	// Now can we (and should we) build a church right by?
 	// Is there already a nearby church?
-	if (!closeChurch && (_this.me.karbonite>=20 || _this.me.fuel>=100)) {
+	if (!closeChurch && (_this.karbonite_map[_this.me.y][_this.me.x] || _this.fuel_map[_this.me.y][_this.me.x])) {
 		for (let i = 0; i < Miner.aroundDirs.length; i++) {
 			let x = _this.me.x + Miner.aroundDirs[i][0];
 			let y = _this.me.y + Miner.aroundDirs[i][1];
@@ -186,7 +169,7 @@ Miner.turn = function turn(_this, goForKarb, goForFuel) {
 			}
 		}
 		// Okay, we didn't find any nearby close churches. Let's build one then.
-		if (_this.karbonite >= 50 && !closeChurch && (_this.karbonite_map[_this.me.y][_this.me.x] || _this.fuel_map[_this.me.y][_this.me.x])) {
+		if (_this.karbonite >= 50 && !closeChurch) {
 			for (let i = 0; i < Miner.giveDirs.length; i++) {
 				let x = _this.me.x + Miner.giveDirs[i][0];
 				let y = _this.me.y + Miner.giveDirs[i][1];
