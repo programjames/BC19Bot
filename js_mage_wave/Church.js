@@ -18,11 +18,13 @@ var KARB_MINER = 4;
 var FUEL_MINER = 5;
 var BOTH_MINER = 3;
 var SEND_WAVE = 255;
+var BUILT_PREACHER = 254;
 
 let resources = 0;
 var sentWave = false;
 let preachers_built = 0;
 var waveCount = 0;
+let pilgrims_built = 0;
 
 Church.turn = function turn(_this){
 	let visibleRobotMap = _this.getVisibleRobotMap();
@@ -103,13 +105,14 @@ Church.turn = function turn(_this){
 			}
 		}
 	}
-	else if(nearby_pilgrims<resources) {
+	else if(nearby_pilgrims<resources && pilgrims_built < 5) {
 		if(_this.karbonite>=40 && _this.fuel>=100) {
 			//build a fuel guy.
 			for(let i = 0; i<Church.buildDirs.length; i++){
 				let x = Church.buildDirs[i][0]+_this.me.x;
 				let y = Church.buildDirs[i][1]+_this.me.y;
 				if(nav.isOpen([x,y], _this.map, visibleRobotMap)){
+					pilgrims_built+=1;
 					_this.signal(BOTH_MINER, 2);
 					_this.castleTalk(1);
 					return _this.buildUnit(SPECS.PILGRIM, Church.buildDirs[i][0], Church.buildDirs[i][1]);
@@ -118,12 +121,13 @@ Church.turn = function turn(_this){
 		}
 	}
 	else{
-		if(_this.karbonite>=80 && _this.fuel>=Math.min(400*preachers_built,10000)+500) {
+		if(_this.karbonite>=80 && _this.fuel>=400*preachers_built && preachers_built<10) {
 			for(let i = 0; i<Church.buildDirs.length; i++){
 				let x = Church.buildDirs[i][0]+_this.me.x;
 				let y = Church.buildDirs[i][1]+_this.me.y;
 				if(nav.isOpen([x,y], _this.map, visibleRobotMap)){
 					preachers_built+=1;
+					_this.castleTalk(BUILT_PREACHER);
 					return _this.buildUnit(SPECS.PREACHER, Church.buildDirs[i][0], Church.buildDirs[i][1]);
 				}
 			}

@@ -23,7 +23,7 @@ var BOTH_MINER = 3;
 
 class MyRobot extends BCAbstractRobot {
     turn() {
-		//this.log(this.fuel);
+		////this.log(this.fuel);
 		if(this.me.unit === SPECS.PILGRIM) {
 			if(this.me.turn === 1){
 				let visibleRobotMap = this.getVisibleRobotMap();

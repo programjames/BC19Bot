@@ -63,8 +63,8 @@ Miner.turn = function turn(_this, goForKarb, goForFuel) {
 		}
 	}
 	//if(goForFuel) {
-		//_this.log("I AM FUEL");
-		//_this.log(resource_goals);
+		////_//this.log("I AM FUEL");
+		////_//this.log(resource_goals);
 	//}
 	/*if (resource_goals.length === 0) {
 		//add resource and depot locations
@@ -102,10 +102,10 @@ Miner.turn = function turn(_this, goForKarb, goForFuel) {
 		}
 	}
 	
-	//_this.log(depot_goals);
-	//_this.log(closeChurch);
-	//_this.log(_this.karbonite);
-	//_this.log(_this.fuel);
+	////_//this.log(depot_goals);
+	////_//this.log(closeChurch);
+	////_//this.log(_this.karbonite);
+	////_//this.log(_this.fuel);
 	//if there are no nearby depots, set closeChruch to false
 	if(depot_goals.length === 0) {
 		closeChurch = false;
