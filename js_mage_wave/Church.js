@@ -118,7 +118,7 @@ Church.turn = function turn(_this){
 		}
 	}
 	else{
-		if(_this.karbonite>=80 && _this.fuel>=Math.min(50*_this.me.turn,10000)+500) {
+		if(_this.karbonite>=80 && _this.fuel>=Math.min(400*preachers_built,10000)+500) {
 			for(let i = 0; i<Church.buildDirs.length; i++){
 				let x = Church.buildDirs[i][0]+_this.me.x;
 				let y = Church.buildDirs[i][1]+_this.me.y;

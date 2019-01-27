@@ -86,22 +86,26 @@ Castle.turn = function turn(_this){
 		_this.castleTalk(nav.pack([_this.me.x, _this.me.y]));
 	}
 	// End of first turn stuff.
-	
+	if(sentWave){
+		waveCount+=1
+		if(waveCount>=50){
+			sentWave = false;
+			waveCount = 0;
+		}
+	}
 	if(!sentWave && preachers_built>=20) {
 		sentWave = true;
 		preachers_built = 0;
 		let bitSend = 0;
-		for(let j = 0; j<castle_locations.length; j++){
-			//_this.log(bitSend);
-			bitSend = bitSend<<4;
-			bitSend+=castle_locations[j][0];
-			bitSend = bitSend<<4;
-			bitSend+=castle_locations[j][1];
-		}
-		if(castle_locations.length === 1){
-			bitSend = bitSend<<8;
+		if(castle_locations.length === 0) {
+			bitSend = 0;
+		} else if(castle_locations.length === 1) {
+			bitSend = nav.pack(castle_locations[0])<<8;
+		} else if(castle_locations.length === 2) {
+			bitSend = nav.pack(castle_locations[0])<<8 + nav.pack(castle_locations[1]);
 		}
 		// Signal across the entire map!
+		_this.signal(bitSend);
 		_this.signal(bitSend, Math.pow(Math.ceil(mapWidth*1.41421356237),2));
 	}
 	
@@ -114,15 +118,12 @@ Castle.turn = function turn(_this){
 				sentWave = true;
 				preachers_built = 0;
 				let bitSend = 0;
-				for(let j = 0; j<castle_locations.length; j++){
-					//_this.log(bitSend);
-					bitSend = bitSend<<4;
-					bitSend+=castle_locations[j][0];
-					bitSend = bitSend<<4;
-					bitSend+=castle_locations[j][1];
-				}
-				if(castle_locations.length === 1){
-					bitSend = bitSend<<8;
+				if(castle_locations.length === 0) {
+					bitSend = 0;
+				} else if(castle_locations.length === 1) {
+					bitSend = nav.pack(castle_locations[0])<<8;
+				} else if(castle_locations.length === 2) {
+					bitSend = nav.pack(castle_locations[0])<<8 + nav.pack(castle_locations[1]);
 				}
 				// Signal across the entire map!
 				_this.signal(bitSend, Math.pow(Math.ceil(mapWidth*1.41421356237),2));
@@ -159,30 +160,27 @@ Castle.turn = function turn(_this){
 	let max_fuels = Math.min(Math.floor(9/(castle_locations.length+2)), Math.ceil(fuel_spots/(castle_locations.length + 1)));
 	// Number of pilgrims to build at most: Math.ceil(karbonite_spots/(castle_locations.length + 1)) for karb, similar for fuel.
 	
-	let friendly_prophets = visibleRobots.filter(robot => robot.team === _this.me.team && _this.isVisible(robot) && robot.id === SPECS.PROPHET);
+	let friendly_preachers = visibleRobots.filter(robot => robot.team === _this.me.team && _this.isVisible(robot) && robot.id === SPECS.PREACHER);
 	
 	let dangerous_enemies = enemies.filter(enemy => enemy.unit >=3 || enemy.unit === 0);
-	let closest_enemy_location = nav.closestLocation([_this.x, _this.y], enemy_locations);
-	if((dangerous_enemies.length>0 || (enemy_locations.length>0 && nav.distSquared(closest_enemy_location, [_this.me.x, _this.me.y])<=300)) && friendly_prophets.length<3 && _this.karbonite>=25 && _this.fuel>=50) {
-		let bitSend = 0;
-		if(castle_locations.length === 0) {
-			bitSend = 0
-		} else if (castle_locations.length === 1) {
-			bitSend = nav.pack(castle_locations[0])<<8;
-		} else if (castle_locations.length === 2) {
-			bitSend = (nav.pack(castle_locations[0])<<8) + nav.pack(castle_locations[1]);
-		}
-		
+	let dangerous_enemy_locations = dangerous_enemies.map(enemy => [enemy.x, enemy.y]);
+	let dangerous_enemy_closest_location = nav.closestLocation([_this.me.x, _this.me.y], dangerous_enemy_locations);
+	let closest_enemy_location = nav.closestLocation([_this.me.x, _this.me.y], enemy_locations);
+	if((dangerous_enemies.length>0 || (enemy_locations.length>0 && nav.distSquared(dangerous_enemy_closest_location, [_this.me.x, _this.me.y])<=300)) && friendly_preachers.length<3 && _this.karbonite>=25 && _this.fuel>=50) {
+		let pos = dangerous_enemy_closest_location;
+		let bitSend = (pos[0]<<6)+pos[1];
+		_this.log(bitSend);
 		for(let i = 0; i<Castle.buildDirs.length; i++){
 			let x = Castle.buildDirs[i][0]+_this.me.x;
 			let y = Castle.buildDirs[i][1]+_this.me.y;
 			if(nav.isOpen([x,y], _this.map, visibleRobotMap)){
 				_this.signal(bitSend, 2);
+				preachers_built+=1;
 				return _this.buildUnit(SPECS.PREACHER, Castle.buildDirs[i][0], Castle.buildDirs[i][1]);
 			}
 		}
 	}
-	else if((scouts_built<1) && _this.karbonite>=10 && _this.fuel >=50){
+	else if(false && (scouts_built<1) && _this.karbonite>=10 && _this.fuel >=50){
 		// build scout.
 		let bitSend = 0;
 		if(castle_locations.length === 0) {
@@ -193,7 +191,6 @@ Castle.turn = function turn(_this){
 			bitSend = (nav.pack(castle_locations[0])<<8) + nav.pack(castle_locations[1]);
 		}
 		
-		//_this.log("bit2: "+bitSend);
 		for(let i = 0; i<Castle.buildDirs.length; i++){
 			let x = Castle.buildDirs[i][0]+_this.me.x;
 			let y = Castle.buildDirs[i][1]+_this.me.y;
@@ -254,22 +251,12 @@ Castle.turn = function turn(_this){
 			}
 		}
 		
-		if(_this.karbonite>=70 && _this.fuel>=Math.min(50*_this.me.turn,10000)+200) {
-			let bitSend = 0;
-			if(castle_locations.length === 0) {
-				bitSend = 0
-			} else if (castle_locations.length === 1) {
-				bitSend = nav.pack(castle_locations[0])<<8;
-			} else if (castle_locations.length === 2) {
-				bitSend = (nav.pack(castle_locations[0])<<8) + nav.pack(castle_locations[1]);
-			}
-			//_this.log("bit: "+bitSend);
+		if(_this.karbonite>=70 && _this.fuel>=Math.min(400*preachers_built,10000)+200) {
 			for(let i = 0; i<Castle.buildDirs.length; i++){
 				let x = Castle.buildDirs[i][0]+_this.me.x;
 				let y = Castle.buildDirs[i][1]+_this.me.y;
 				if(nav.isOpen([x,y], _this.map, visibleRobotMap)){
-					prophets_built+=1;
-					_this.signal(bitSend, 2);
+					preachers_built+=1;
 					return _this.buildUnit(SPECS.PREACHER, Castle.buildDirs[i][0], Castle.buildDirs[i][1]);
 				}
 			}
