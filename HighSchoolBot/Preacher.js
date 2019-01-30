@@ -25,6 +25,8 @@ Preacher.turn = function turn(_this) {
 	if(_this.me.turn === 1) {
 		mapWidth = _this.map[0].length;
 		mapHeight = _this.map.length;
+		//add impassable/passable to lattice map
+		_this.map.forEach(row => lattice_map.push(row.slice()));
 		
 		//determine map symmetry direction
 		for (let a = 0; a < mapWidth; a++) {
@@ -44,6 +46,13 @@ Preacher.turn = function turn(_this) {
 		//determine enemy castle locations
 		for(let i = 0; i<visibleRobots.length;i++){
 			if(visibleRobots[i].unit === SPECS.CASTLE && visibleRobots[i].team === _this.me.team){
+				//take out nearby castle
+				for(let j = 0; j<Preacher.buildDirs.length; j++) {
+					let loc = Preacher.buildDirs[j];
+					let x = visibleRobots[i].x + loc[0];
+					let y = visibleRobots[i].y + loc[1];
+					lattice_map[y][x] = false;
+				}
 				// Push the castle location.
 				if(horizontal_symmetry){
 					castle_locations.push([mapWidth - 1 - visibleRobots[i].x, visibleRobots[i].y]);
@@ -71,16 +80,16 @@ Preacher.turn = function turn(_this) {
 				}
 			}
 		}
-		//add impassable/passable to lattice map
-		_this.map.forEach(row => lattice_map.push(row.slice()));
+		
 		//take out some values from lattice map
 		for(let x = 0; x<mapWidth; x++) {
 			for(let y = 0; y<mapHeight; y++) {
-				if ((x+y)%2 === 0 || _this.fuel_map[y][x] || _this.karbonite_map[y][x]) {
+				if (((x%2)+(y%2)) === 0 || _this.fuel_map[y][x] || _this.karbonite_map[y][x]) {
 					lattice_map[y][x] = false;
 				}
 			}
 		}
+		
 	}
 	//end first turn stuff
 	
