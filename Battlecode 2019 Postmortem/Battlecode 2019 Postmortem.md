@@ -30,13 +30,13 @@ ___
 
 Now that rushes were not an option, many teams switched over to a turtle bot. They would build prophets in a lattice around their castle, slowly expanding outwards. Bots that tried to attack their lattice would be taken out once they entered the much larger range of the prophets.
 
-![An example prophet lattice](https://raw.githubusercontent.com/programjames/BC19Bot/master/Battlecode%202019%20Postmortem/prophet_lattice.PNG)
+<center>![An example prophet lattice](https://raw.githubusercontent.com/programjames/BC19Bot/master/Battlecode%202019%20Postmortem/prophet_lattice.PNG)</center>
 
 <center>A typical prophet lattice.</center>
 
 This time, my team again went for the unconventional strategy. We noticed that crusaders cost only 50 fuel to build. However, it cost prophets 25 * 4 = 100 fuel to kill a crusader. Crusaders also cost minimal karbonite, and moved quite quickly. We decided the counter-strategy to lattices was to build a stream of crusaders that would slowly make the prophets run out of fuel. When their fuel supply was exhausted, our crusaders could break through and destroy their castle. A similar strategy works with preachers, due to their low fuel cost to be-killed ratio.
 
-![An example of a preacher stream](https://raw.githubusercontent.com/programjames/BC19Bot/master/Battlecode%202019%20Postmortem/preacher_stream.PNG)
+<center>![An example of a preacher stream](https://raw.githubusercontent.com/programjames/BC19Bot/master/Battlecode%202019%20Postmortem/preacher_stream.PNG)</center>
 
 <center>A steady stream of preachers takes out the prophets.</center>
 
@@ -62,12 +62,12 @@ We didn't make the final tournament, but there was still one other tournament we
 
 A church spear became well known during the qualifying tournament when someone posted a giphy on Discord displaying the strategy. Due to the turn queue this year, when a unit was built it could *immediately* take an action. But what if this action was building another unit? You could make a chain as long as you like, as long as you have the fuel and karbonite to keep building! A church spear took two units to create; pilgrims and churches. The pilgrim would build a church, whereupon the church would immediately build a pilgrim. With this chain, you could build churches right in the middle of the enemy's units before they could take a single turn.
 
-![A church spear](https://raw.githubusercontent.com/programjames/BC19Bot/master/Battlecode%202019%20Postmortem/church_spear.PNG)
+<center>![A church spear](https://raw.githubusercontent.com/programjames/BC19Bot/master/Battlecode%202019%20Postmortem/church_spear.PNG)</center>
 <center>A church spear</center>
 
 Luckily, an easy counter existed. Most people at the time were building lattices in a chess-board formation, like in the prophet lattice shown earlier. We adopted a denser lattice where our units could still move throughout the lattice, but enemies couldn't build between our units.
 
-![Our final lattice of preachers and crusaders](https://raw.githubusercontent.com/programjames/BC19Bot/master/Battlecode%202019%20Postmortem/dense_lattice.PNG)
+<center>![Our final lattice of preachers and crusaders](https://raw.githubusercontent.com/programjames/BC19Bot/master/Battlecode%202019%20Postmortem/dense_lattice.PNG)</center>
 <center>Our final dense lattice (red).
 
 Finally, we tried creating our own church spear. In fact, before the submission deadline we had a working church spear, but we were editing the wrong file, and so the changes didn't carry over to our final bot. It was unfortunate, but the church spear may not have been a great benefit.
